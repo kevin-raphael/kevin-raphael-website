@@ -5,45 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Financial Planner | Kevin Raphael</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
-      --navy: #0a192f;
-      --teal: #64ffda;
-      --slate: #8892b0;
-      --light-slate: #a8b2d8;
-      --lightest-slate: #ccd6f6;
-      --card-bg: #112240;
-      --card-border: #233554;
+      --navy: #0a192f; --teal: #64ffda; --slate: #8892b0;
+      --light-slate: #a8b2d8; --lightest-slate: #ccd6f6;
+      --card-bg: #112240; --card-border: #233554;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { background: var(--navy); color: var(--slate); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; min-height: 100vh; }
 
-    nav {
-      position: fixed; top: 0; width: 100%;
-      background: rgba(10,25,47,0.95); backdrop-filter: blur(10px);
-      z-index: 100; padding: 1rem 2rem;
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--card-border);
-    }
+    nav { position: fixed; top: 0; width: 100%; background: rgba(10,25,47,0.95); backdrop-filter: blur(10px); z-index: 100; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); }
     nav .logo { color: var(--teal); font-size: 1.3rem; font-weight: 700; text-decoration: none; }
     nav .back-link { color: var(--lightest-slate); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
     nav .back-link:hover { color: var(--teal); }
-
     main { padding-top: 64px; }
 
-    .tabs {
-      display: flex; border-bottom: 1px solid var(--card-border);
-      padding: 0 2rem; background: rgba(10,25,47,0.6); position: sticky; top: 64px; z-index: 50;
-    }
-    .tab-btn {
-      padding: 1rem 1.5rem; background: none; border: none; color: var(--slate);
-      font-size: 0.9rem; cursor: pointer; border-bottom: 2px solid transparent;
-      transition: all 0.2s; font-family: inherit; letter-spacing: 0.5px;
-    }
+    .tabs { display: flex; border-bottom: 1px solid var(--card-border); padding: 0 2rem; background: rgba(10,25,47,0.6); position: sticky; top: 64px; z-index: 50; }
+    .tab-btn { padding: 1rem 1.5rem; background: none; border: none; color: var(--slate); font-size: 0.9rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: inherit; letter-spacing: 0.5px; }
     .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
     .tab-btn:hover { color: var(--lightest-slate); }
-
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
@@ -52,13 +35,12 @@
     .wizard-header { margin-bottom: 2rem; }
     .wizard-title { color: var(--lightest-slate); font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem; }
     .wizard-sub { color: var(--slate); font-size: 0.95rem; }
-
     .progress-wrap { background: var(--card-border); border-radius: 4px; height: 4px; margin-bottom: 0.4rem; }
     .progress-fill { height: 100%; background: var(--teal); border-radius: 4px; transition: width 0.4s ease; }
     .progress-label { color: var(--teal); font-family: monospace; font-size: 0.8rem; text-align: right; margin-bottom: 1.5rem; }
 
-    .step { display: none; animation: fadeUp 0.3s ease; }
-    .step.active { display: block; }
+    .step { display: none; }
+    .step.active { display: block; animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
     .step-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; }
@@ -68,11 +50,7 @@
 
     .field { margin-bottom: 1.1rem; }
     .field label { display: block; color: var(--light-slate); font-size: 0.85rem; margin-bottom: 0.35rem; }
-    .field input, .field select {
-      width: 100%; background: var(--navy); border: 1px solid var(--card-border);
-      color: var(--lightest-slate); padding: 0.7rem 1rem; border-radius: 6px;
-      font-size: 0.93rem; font-family: inherit; outline: none; transition: border-color 0.2s;
-    }
+    .field input, .field select { width: 100%; background: var(--navy); border: 1px solid var(--card-border); color: var(--lightest-slate); padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.93rem; font-family: inherit; outline: none; transition: border-color 0.2s; }
     .field input:focus, .field select:focus { border-color: var(--teal); }
     .field input::placeholder { color: var(--slate); }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -80,23 +58,25 @@
     .cc-block { background: var(--navy); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
     .cc-label { color: var(--teal); font-family: monospace; font-size: 0.78rem; margin-bottom: 0.75rem; letter-spacing: 0.5px; }
 
+    /* GOAL SELECTION */
     .goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .goal-opt {
-      display: flex; align-items: center; gap: 0.75rem;
-      background: var(--navy); border: 1px solid var(--card-border); border-radius: 8px;
-      padding: 0.75rem 1rem; cursor: pointer; transition: all 0.2s; user-select: none;
-    }
-    .goal-opt:hover { border-color: var(--teal); }
-    .goal-opt.selected { border-color: var(--teal); background: rgba(100,255,218,0.05); }
-    .goal-opt input { display: none; }
-    .goal-icon { font-size: 1.3rem; }
+    .goal-opt { display: flex; align-items: center; gap: 0.75rem; background: var(--navy); border: 2px solid var(--card-border); border-radius: 8px; padding: 0.75rem 1rem; cursor: pointer; transition: all 0.2s; user-select: none; }
+    .goal-opt:hover { border-color: var(--teal); background: rgba(100,255,218,0.03); }
+    .goal-opt.selected { border-color: var(--teal); background: rgba(100,255,218,0.08); }
+    .goal-opt.selected .goal-label { color: var(--teal); }
+    .goal-icon { font-size: 1.3rem; flex-shrink: 0; }
     .goal-label { color: var(--lightest-slate); font-size: 0.88rem; }
 
+    /* GOAL DETAILS (step 8) */
+    .goal-detail-card { background: var(--navy); border: 1px solid var(--card-border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .gd-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+    .gd-icon { font-size: 1.4rem; }
+    .gd-title { color: var(--teal); font-weight: 600; font-size: 1rem; font-family: monospace; }
+    .field-hint { color: var(--slate); font-size: 0.78rem; margin-top: 0.2rem; font-style: italic; }
+
+    /* BUTTONS */
     .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
-    .btn {
-      padding: 0.8rem 1.6rem; border-radius: 6px; font-size: 0.9rem;
-      cursor: pointer; border: none; font-family: inherit; letter-spacing: 0.5px; transition: all 0.2s;
-    }
+    .btn { padding: 0.8rem 1.6rem; border-radius: 6px; font-size: 0.9rem; cursor: pointer; border: none; font-family: inherit; letter-spacing: 0.5px; transition: all 0.2s; }
     .btn-outline { background: transparent; color: var(--teal); border: 1px solid var(--teal); flex: 1; }
     .btn-outline:hover { background: rgba(100,255,218,0.08); }
     .btn-ghost { background: transparent; color: var(--slate); border: 1px solid var(--card-border); }
@@ -106,7 +86,7 @@
 
     /* RESULTS */
     #results { display: none; }
-    .results-wrap { max-width: 880px; margin: 3rem auto; padding: 0 1.5rem; }
+    .results-wrap { max-width: 880px; margin: 3rem auto; padding: 0 1.5rem 4rem; }
     .res-header { text-align: center; margin-bottom: 3rem; }
     .res-title { color: var(--lightest-slate); font-size: 2rem; font-weight: 700; }
     .res-name { color: var(--teal); }
@@ -124,11 +104,35 @@
     .chart-title { color: var(--lightest-slate); font-size: 1rem; font-weight: 600; margin-bottom: 1.5rem; }
     .chart-wrap { max-width: 280px; margin: 0 auto; }
 
+    /* GOAL CONTRIBUTION TABLE */
+    .goal-table-wrap { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; overflow: hidden; margin-bottom: 2rem; }
+    .goal-table-title { padding: 1.25rem 1.5rem; color: var(--lightest-slate); font-size: 1rem; font-weight: 600; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; gap: 0.5rem; }
+    .goal-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .goal-table th { padding: 0.6rem 1rem; text-align: left; color: var(--slate); font-family: monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--card-border); background: rgba(100,255,218,0.03); }
+    .goal-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--card-border); color: var(--lightest-slate); vertical-align: top; }
+    .goal-table tr:last-child td { border-bottom: none; }
+    .goal-table tr:hover td { background: rgba(100,255,218,0.02); }
+    .td-goal { display: flex; align-items: center; gap: 0.5rem; }
+    .td-mono { font-family: monospace; }
+    .td-teal { color: var(--teal); font-family: monospace; font-weight: 600; }
+    .td-sub { font-size: 0.75rem; color: var(--slate); margin-top: 0.15rem; }
+
+    .cashflow-box { margin: 1.25rem 1.5rem; background: var(--navy); border-radius: 8px; padding: 1.25rem; border: 1px solid var(--card-border); }
+    .cf-row { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; font-size: 0.9rem; }
+    .cf-label { color: var(--slate); }
+    .cf-value { font-family: monospace; font-weight: 600; color: var(--lightest-slate); }
+    .cf-divider { border: none; border-top: 1px solid var(--card-border); margin: 0.5rem 0; }
+    .cf-total-label { color: var(--lightest-slate); font-weight: 600; }
+    .cf-total-value { font-family: monospace; font-size: 1.1rem; font-weight: 700; }
+    .cf-alert { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .cf-alert.ok { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
+    .cf-alert.warn { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+    .cf-alert.bad { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+
     .plan-block { margin-bottom: 2.5rem; }
     .plan-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
     .yr-badge { background: rgba(100,255,218,0.1); color: var(--teal); border: 1px solid rgba(100,255,218,0.3); padding: 0.2rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-family: monospace; }
     .plan-title { color: var(--lightest-slate); font-size: 1.2rem; font-weight: 600; }
-
     .milestones { display: flex; flex-direction: column; gap: 0.75rem; }
     .ms { display: flex; align-items: flex-start; gap: 1rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem 1.25rem; }
     .ms-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
@@ -140,12 +144,14 @@
     .tip-title { color: var(--teal); font-size: 0.82rem; font-family: monospace; margin-bottom: 0.2rem; }
     .tip-text { color: var(--slate); font-size: 0.88rem; }
 
-    .reset-btn {
-      display: block; margin: 2rem auto 0; background: transparent;
-      color: var(--slate); border: 1px solid var(--card-border);
-      padding: 0.7rem 1.5rem; border-radius: 6px; cursor: pointer;
-      font-family: inherit; font-size: 0.85rem; transition: all 0.2s;
-    }
+    /* DOWNLOAD BUTTONS */
+    .download-row { display: flex; gap: 1rem; justify-content: center; margin-top: 2.5rem; flex-wrap: wrap; }
+    .dl-btn { display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.75rem; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-family: inherit; font-weight: 600; letter-spacing: 0.5px; transition: all 0.2s; border: none; }
+    .dl-pdf { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); }
+    .dl-pdf:hover { background: rgba(239,68,68,0.2); }
+    .dl-xls { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.35); }
+    .dl-xls:hover { background: rgba(34,197,94,0.2); }
+    .reset-btn { display: block; margin: 1rem auto 0; background: transparent; color: var(--slate); border: 1px solid var(--card-border); padding: 0.7rem 1.5rem; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; transition: all 0.2s; }
     .reset-btn:hover { color: var(--teal); border-color: var(--teal); }
 
     /* TRACKER */
@@ -156,7 +162,6 @@
     .month-nav button { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--lightest-slate); width: 34px; height: 34px; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
     .month-nav button:hover { border-color: var(--teal); color: var(--teal); }
     .month-label { color: var(--teal); font-family: monospace; font-size: 0.95rem; min-width: 150px; text-align: center; }
-
     .tracker-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .ts { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem 1.25rem; }
     .ts-lbl { color: var(--slate); font-size: 0.75rem; font-family: monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.2rem; }
@@ -164,13 +169,11 @@
     .ts-val.good { color: #22c55e; }
     .ts-val.bad { color: #ef4444; }
     .ts-val.link { color: var(--teal); font-size: 0.9rem; cursor: pointer; }
-
     .cat-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
     .cat-badge { display: flex; align-items: center; gap: 0.35rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.76rem; }
     .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .cat-name { color: var(--light-slate); }
     .cat-amt { color: var(--teal); font-family: monospace; margin-left: 0.2rem; }
-
     .calendar { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; overflow: hidden; }
     .cal-header { display: grid; grid-template-columns: repeat(7,1fr); background: rgba(100,255,218,0.04); border-bottom: 1px solid var(--card-border); }
     .cal-dn { text-align: center; padding: 0.65rem; color: var(--teal); font-family: monospace; font-size: 0.78rem; letter-spacing: 0.5px; }
@@ -186,15 +189,12 @@
     .cal-entry { font-size: 0.7rem; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal-plus { position: absolute; bottom: 3px; right: 5px; color: var(--card-border); font-size: 0.85rem; }
     .cal-cell:hover .cal-plus { color: var(--teal); }
-
-    /* MODAL */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
     .overlay.open { display: flex; }
     .modal { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 420px; position: relative; max-height: 90vh; overflow-y: auto; }
     .modal-title { color: var(--lightest-slate); font-size: 1.05rem; font-weight: 600; margin-bottom: 1.25rem; }
     .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--slate); font-size: 1.3rem; cursor: pointer; }
     .modal-close:hover { color: var(--lightest-slate); }
-
     .exp-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--card-border); font-size: 0.86rem; }
     .exp-item:last-child { border-bottom: none; }
     .exp-name { color: var(--lightest-slate); }
@@ -202,7 +202,6 @@
     .exp-amt { color: #ef4444; font-family: monospace; margin-right: 0.5rem; }
     .exp-del { background: none; border: none; color: var(--slate); cursor: pointer; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.78rem; }
     .exp-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
-
     .add-section { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--card-border); }
     .add-label { color: var(--teal); font-family: monospace; font-size: 0.78rem; margin-bottom: 0.75rem; }
 
@@ -212,6 +211,9 @@
       .cal-cell { min-height: 60px; padding: 0.3rem; }
       .cal-dn { padding: 0.4rem 0; font-size: 0.7rem; }
       .summary-grid { grid-template-columns: repeat(2,1fr); }
+      .goal-table { font-size: 0.78rem; }
+      .goal-table th, .goal-table td { padding: 0.6rem 0.75rem; }
+      .download-row { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
@@ -233,15 +235,15 @@
     <div id="wizard" class="wizard">
       <div class="wizard-header">
         <h1 class="wizard-title">Build Your Financial Plan</h1>
-        <p class="wizard-sub">Answer 7 questions. Get a personalized 3, 5 &amp; 30-year Canadian roadmap — free.</p>
+        <p class="wizard-sub">Answer 8 questions. Get a personalized 3, 5 &amp; 30-year Canadian roadmap — free.</p>
       </div>
-      <div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:14%"></div></div>
-      <div class="progress-label" id="prog-label">Step 1 of 7</div>
+      <div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:12.5%"></div></div>
+      <div class="progress-label" id="prog-label">Step 1 of 8</div>
 
       <!-- Step 1 -->
       <div class="step active" id="step-1">
         <div class="step-card">
-          <div class="step-num">01 / 07</div>
+          <div class="step-num">01 / 08</div>
           <h2 class="step-heading">About You</h2>
           <p class="step-desc">Let's start with the basics.</p>
           <div class="field"><label>First Name</label><input id="f-name" type="text" placeholder="e.g. Alex" /></div>
@@ -264,7 +266,7 @@
       <!-- Step 2 -->
       <div class="step" id="step-2">
         <div class="step-card">
-          <div class="step-num">02 / 07</div>
+          <div class="step-num">02 / 08</div>
           <h2 class="step-heading">Your Income</h2>
           <p class="step-desc">Enter take-home pay after all taxes and deductions.</p>
           <div class="field"><label>Monthly Take-Home Pay ($CAD)</label><input id="f-income" type="number" placeholder="e.g. 4500" min="0" /></div>
@@ -279,7 +281,7 @@
       <!-- Step 3 -->
       <div class="step" id="step-3">
         <div class="step-card">
-          <div class="step-num">03 / 07</div>
+          <div class="step-num">03 / 08</div>
           <h2 class="step-heading">Housing &amp; Fixed Bills</h2>
           <p class="step-desc">Your recurring monthly commitments.</p>
           <div class="field"><label>Rent or Mortgage (monthly)</label><input id="f-rent" type="number" placeholder="e.g. 1800" min="0" /></div>
@@ -305,7 +307,7 @@
       <!-- Step 4 -->
       <div class="step" id="step-4">
         <div class="step-card">
-          <div class="step-num">04 / 07</div>
+          <div class="step-num">04 / 08</div>
           <h2 class="step-heading">Day-to-Day Spending</h2>
           <p class="step-desc">Think about your typical monthly spending.</p>
           <div class="field-row">
@@ -327,7 +329,7 @@
       <!-- Step 5 -->
       <div class="step" id="step-5">
         <div class="step-card">
-          <div class="step-num">05 / 07</div>
+          <div class="step-num">05 / 08</div>
           <h2 class="step-heading">Credit Cards &amp; Debt</h2>
           <p class="step-desc">This is where the biggest financial wins often hide.</p>
           <div class="cc-block">
@@ -357,7 +359,7 @@
       <!-- Step 6 -->
       <div class="step" id="step-6">
         <div class="step-card">
-          <div class="step-num">06 / 07</div>
+          <div class="step-num">06 / 08</div>
           <h2 class="step-heading">Current Savings</h2>
           <p class="step-desc">Starting from zero? No problem. Every plan starts somewhere.</p>
           <div class="field-row">
@@ -375,25 +377,39 @@
         </div>
       </div>
 
-      <!-- Step 7 -->
+      <!-- Step 7: Goals -->
       <div class="step" id="step-7">
         <div class="step-card">
-          <div class="step-num">07 / 07</div>
+          <div class="step-num">07 / 08</div>
           <h2 class="step-heading">Your Financial Goals</h2>
-          <p class="step-desc">Select everything that matters. Your plan will be built around these.</p>
-          <div class="goals-grid">
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="home" /><span class="goal-icon">🏠</span><span class="goal-label">Buy a Home</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="retire" /><span class="goal-icon">🌴</span><span class="goal-label">Retire Comfortably</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="debt" /><span class="goal-icon">💳</span><span class="goal-label">Pay Off Debt</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="emergency" /><span class="goal-icon">🛡️</span><span class="goal-label">Emergency Fund</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="travel" /><span class="goal-icon">✈️</span><span class="goal-label">Travel</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="invest" /><span class="goal-icon">📈</span><span class="goal-label">Grow Investments</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="education" /><span class="goal-icon">🎓</span><span class="goal-label">Education / RESP</span></label>
-            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="business" /><span class="goal-icon">🚀</span><span class="goal-label">Start a Business</span></label>
+          <p class="step-desc">Select all that apply — tap each goal to choose it. You can select multiple.</p>
+          <div class="goals-grid" id="goals-grid">
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="home"><span class="goal-icon">🏠</span><span class="goal-label">Buy a Home</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="retire"><span class="goal-icon">🌴</span><span class="goal-label">Retire Comfortably</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="debt"><span class="goal-icon">💳</span><span class="goal-label">Pay Off Debt</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="emergency"><span class="goal-icon">🛡️</span><span class="goal-label">Emergency Fund</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="travel"><span class="goal-icon">✈️</span><span class="goal-label">Travel</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="invest"><span class="goal-icon">📈</span><span class="goal-label">Grow Investments</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="education"><span class="goal-icon">🎓</span><span class="goal-label">Education / RESP</span></div>
+            <div class="goal-opt" onclick="toggleGoal(this)" data-value="business"><span class="goal-icon">🚀</span><span class="goal-label">Start a Business</span></div>
           </div>
         </div>
         <div class="btn-row">
           <button class="btn btn-ghost" onclick="prev(7)">← Back</button>
+          <button class="btn btn-outline" onclick="next(7)">Next — Set Timelines →</button>
+        </div>
+      </div>
+
+      <!-- Step 8: Goal Details (built dynamically) -->
+      <div class="step" id="step-8">
+        <div class="step-card">
+          <div class="step-num">08 / 08</div>
+          <h2 class="step-heading">Goal Details &amp; Timelines</h2>
+          <p class="step-desc">For each goal, tell us the target amount, what you've already saved, and when you want to reach it. We'll calculate your exact monthly contribution.</p>
+          <div id="goal-details-container"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(8)">← Back</button>
           <button class="btn btn-solid" onclick="generate()">Generate My Plan →</button>
         </div>
       </div>
@@ -406,35 +422,44 @@
         <h1 class="res-title">Roadmap for <span class="res-name" id="r-name"></span></h1>
         <p class="res-sub" id="r-sub"></p>
       </div>
-
       <div class="summary-grid" id="r-summary"></div>
-
       <div class="chart-box">
         <div class="chart-title">Monthly Expense Breakdown</div>
         <div class="chart-wrap"><canvas id="expChart"></canvas></div>
       </div>
-
+      <!-- Goal Contribution Plan -->
+      <div class="plan-block" id="r-goals-block">
+        <div class="plan-head"><span class="plan-title">📋 Goal Contribution Plan (Pre-Authorized)</span></div>
+        <div class="goal-table-wrap">
+          <div class="goal-table-title">Monthly &amp; Biweekly PAC Amounts</div>
+          <table class="goal-table" id="r-goal-table">
+            <thead><tr><th>Goal</th><th>Target</th><th>Saved</th><th>Still Needed</th><th>Timeline</th><th>Monthly PAC</th><th>Biweekly PAC</th></tr></thead>
+            <tbody id="r-goal-rows"></tbody>
+          </table>
+          <div class="cashflow-box" id="r-cashflow"></div>
+        </div>
+      </div>
       <div class="plan-block">
         <div class="plan-head"><span class="yr-badge">3-Year Plan</span><span class="plan-title">Milestones by <span id="y3"></span></span></div>
         <div class="milestones" id="r-3yr"></div>
       </div>
-
       <div class="plan-block">
         <div class="plan-head"><span class="yr-badge">5-Year Plan</span><span class="plan-title">Milestones by <span id="y5"></span></span></div>
         <div class="milestones" id="r-5yr"></div>
       </div>
-
       <div class="plan-block">
         <div class="plan-head"><span class="yr-badge">30-Year Plan</span><span class="plan-title">Retirement Vision by <span id="y30"></span></span></div>
         <div class="milestones" id="r-30yr"></div>
       </div>
-
       <div class="plan-block">
         <div class="plan-head"><span class="plan-title">Personalized Tips &amp; Tricks</span></div>
         <div class="tips" id="r-tips"></div>
       </div>
-
-      <button class="reset-btn" onclick="reset()">← Start Over / New Plan</button>
+      <div class="download-row">
+        <button class="dl-btn dl-pdf" onclick="downloadPDF()">⬇ Download PDF Report</button>
+        <button class="dl-btn dl-xls" onclick="downloadExcel()">⬇ Download Excel Plan</button>
+      </div>
+      <button class="reset-btn" onclick="resetPlan()">← Start Over / New Plan</button>
     </div>
   </div><!-- /tab-planner -->
 
@@ -475,14 +500,10 @@
         <div class="field"><label>Amount ($)</label><input id="e-amt" type="number" placeholder="15.50" min="0" step="0.01" /></div>
         <div class="field"><label>Category</label>
           <select id="e-cat">
-            <option value="food">Food &amp; Drink</option>
-            <option value="housing">Housing</option>
-            <option value="transport">Transport</option>
-            <option value="entertainment">Entertainment</option>
-            <option value="health">Health</option>
-            <option value="shopping">Shopping</option>
-            <option value="bills">Bills</option>
-            <option value="other">Other</option>
+            <option value="food">Food &amp; Drink</option><option value="housing">Housing</option>
+            <option value="transport">Transport</option><option value="entertainment">Entertainment</option>
+            <option value="health">Health</option><option value="shopping">Shopping</option>
+            <option value="bills">Bills</option><option value="other">Other</option>
           </select>
         </div>
       </div>
@@ -492,22 +513,32 @@
 </div>
 
 <script>
+// ── CONSTANTS ──
+const GOAL_META = {
+  home:      { icon: '🏠', label: 'Buy a Home',           targetHint: 'e.g. 80000 (down payment goal)',  yearsHint: 'e.g. 5' },
+  retire:    { icon: '🌴', label: 'Retire Comfortably',   targetHint: 'e.g. 1000000 (portfolio target)', yearsHint: 'e.g. 25' },
+  debt:      { icon: '💳', label: 'Pay Off Debt',         targetHint: 'Total debt balance to eliminate', yearsHint: 'e.g. 3' },
+  emergency: { icon: '🛡️', label: 'Emergency Fund',       targetHint: '3-6 months of expenses',          yearsHint: 'e.g. 2' },
+  travel:    { icon: '✈️', label: 'Travel Fund',          targetHint: 'e.g. 10000',                      yearsHint: 'e.g. 2' },
+  invest:    { icon: '📈', label: 'Investment Portfolio', targetHint: 'e.g. 100000',                     yearsHint: 'e.g. 10' },
+  education: { icon: '🎓', label: 'Education / RESP',     targetHint: 'e.g. 50000',                      yearsHint: 'e.g. 10' },
+  business:  { icon: '🚀', label: 'Start a Business',     targetHint: 'e.g. 25000 (startup capital)',    yearsHint: 'e.g. 3' },
+};
+
+const CATS = {
+  food:{ label:'Food & Drink', color:'#f59e0b' }, housing:{ label:'Housing', color:'#3b82f6' },
+  transport:{ label:'Transport', color:'#8b5cf6' }, entertainment:{ label:'Entertainment', color:'#ec4899' },
+  health:{ label:'Health', color:'#22c55e' }, shopping:{ label:'Shopping', color:'#f97316' },
+  bills:{ label:'Bills', color:'#64ffda' }, other:{ label:'Other', color:'#94a3b8' },
+};
+
 // ── STATE ──
 let curStep = 1;
+const TOTAL_STEPS = 8;
 let activeDay = null;
 let tYear = new Date().getFullYear();
 let tMonth = new Date().getMonth();
-
-const CATS = {
-  food:          { label: 'Food & Drink',  color: '#f59e0b' },
-  housing:       { label: 'Housing',        color: '#3b82f6' },
-  transport:     { label: 'Transport',      color: '#8b5cf6' },
-  entertainment: { label: 'Entertainment',  color: '#ec4899' },
-  health:        { label: 'Health',         color: '#22c55e' },
-  shopping:      { label: 'Shopping',       color: '#f97316' },
-  bills:         { label: 'Bills',          color: '#64ffda' },
-  other:         { label: 'Other',          color: '#94a3b8' },
-};
+window.planData = null;
 
 // ── TABS ──
 function switchTab(tab, btn) {
@@ -518,21 +549,23 @@ function switchTab(tab, btn) {
   if (tab === 'tracker') renderTracker();
 }
 
-// ── WIZARD HELPERS ──
-function g(id, fallback = 0) {
-  const v = document.getElementById(id)?.value;
-  return v ? parseFloat(v) : fallback;
-}
+// ── WIZARD ──
+function g(id, fallback = 0) { const v = document.getElementById(id)?.value; return v ? parseFloat(v) : fallback; }
 function s(id) { return document.getElementById(id)?.value?.trim() || ''; }
 
 function updateProg() {
-  document.getElementById('prog-fill').style.width = (curStep / 7 * 100) + '%';
-  document.getElementById('prog-label').textContent = `Step ${curStep} of 7`;
+  document.getElementById('prog-fill').style.width = (curStep / TOTAL_STEPS * 100) + '%';
+  document.getElementById('prog-label').textContent = `Step ${curStep} of ${TOTAL_STEPS}`;
 }
 
 function next(from) {
   if (from === 1 && !s('f-name')) { alert('Please enter your name.'); return; }
   if (from === 2 && !g('f-income')) { alert('Please enter your monthly income.'); return; }
+  if (from === 7) {
+    const selected = document.querySelectorAll('.goal-opt.selected');
+    if (selected.length === 0) { alert('Please select at least one goal.'); return; }
+    buildGoalStep();
+  }
   document.getElementById('step-' + from).classList.remove('active');
   document.getElementById('step-' + (from + 1)).classList.add('active');
   curStep = from + 1;
@@ -550,19 +583,65 @@ function prev(from) {
 
 function toggleGoal(el) {
   el.classList.toggle('selected');
-  el.querySelector('input').checked = el.classList.contains('selected');
 }
 
-// ── PLAN GENERATION ──
-function generate() {
-  const d = getData();
-  document.getElementById('wizard').style.display = 'none';
-  document.getElementById('results').style.display = 'block';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  render(d);
+function buildGoalStep() {
+  const goals = [...document.querySelectorAll('.goal-opt.selected')].map(el => el.dataset.value);
+  const totalExpenses = g('f-rent') + g('f-phone') + g('f-internet') + g('f-util') + g('f-car') + g('f-carins') + g('f-subs')
+                      + g('f-groc') + g('f-dining') + g('f-ent') + g('f-cloth') + g('f-other')
+                      + g('f-c1m') + g('f-c2m') + g('f-od');
+  const totalDebt = g('f-c1b') + g('f-c2b');
+  const sav = g('f-sav'), tfsa = g('f-tfsa'), rrsp = g('f-rrsp'), fhsa = g('f-fhsa');
+
+  const container = document.getElementById('goal-details-container');
+  container.innerHTML = goals.map(key => {
+    const m = GOAL_META[key];
+    let preTarget = '';
+    let preSaved = '';
+
+    if (key === 'emergency') { preTarget = Math.round(totalExpenses * 3); preSaved = sav; }
+    else if (key === 'debt')  { preTarget = totalDebt; preSaved = 0; }
+    else if (key === 'home')  { preSaved = fhsa + sav; }
+    else if (key === 'retire'){ preTarget = Math.round(totalExpenses * 12 * 25); preSaved = tfsa + rrsp; }
+    else if (key === 'invest'){ preSaved = tfsa + rrsp; }
+
+    return `
+      <div class="goal-detail-card">
+        <div class="gd-header">
+          <span class="gd-icon">${m.icon}</span>
+          <span class="gd-title">${m.label.toUpperCase()}</span>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Total Amount Needed ($)</label>
+            <input id="gd-${key}-target" type="number" placeholder="${m.targetHint}" value="${preTarget || ''}" min="0" />
+            <div class="field-hint">Total target for this goal</div>
+          </div>
+          <div class="field">
+            <label>Already Saved Toward This ($)</label>
+            <input id="gd-${key}-saved" type="number" placeholder="e.g. 0" value="${preSaved || ''}" min="0" />
+            <div class="field-hint">Amount set aside specifically for this</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Complete In How Many Years?</label>
+          <input id="gd-${key}-years" type="number" placeholder="${m.yearsHint}" min="0.25" step="0.25" />
+        </div>
+      </div>`;
+  }).join('');
 }
 
+// ── DATA COLLECTION ──
 function getData() {
+  const goals = [...document.querySelectorAll('.goal-opt.selected')].map(el => el.dataset.value);
+  const goalDetails = {};
+  goals.forEach(k => {
+    goalDetails[k] = {
+      target: g(`gd-${k}-target`),
+      saved:  g(`gd-${k}-saved`),
+      years:  Math.max(0.25, g(`gd-${k}-years`, 1)),
+    };
+  });
   return {
     name: s('f-name'), age: g('f-age'), prov: s('f-prov'),
     income: g('f-income') + g('f-extra'),
@@ -573,55 +652,81 @@ function getData() {
     c2b: g('f-c2b'), c2r: g('f-c2r'), c2m: g('f-c2m'),
     od: g('f-od'),
     sav: g('f-sav'), tfsa: g('f-tfsa'), rrsp: g('f-rrsp'), fhsa: g('f-fhsa'),
-    goals: [...document.querySelectorAll('.goal-opt.selected input')].map(i => i.value),
+    goals, goalDetails,
   };
 }
 
+// ── HELPERS ──
 function fmt(n) { return '$' + Math.abs(Math.round(n)).toLocaleString('en-CA'); }
-function fmtK(n) {
-  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
-  return fmt(n);
-}
+function fmtD(n) { return '$' + Math.abs(n).toFixed(2); }
+function fmtK(n) { if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M'; if (n >= 1000) return '$' + Math.round(n/1000) + 'K'; return fmt(n); }
+
+// Future value of lump sum + regular contributions
 function fv(pv, pmt, annualRate, months) {
-  if (annualRate === 0) return pv + pmt * months;
+  if (annualRate === 0 || months === 0) return pv + pmt * months;
   const r = annualRate / 12;
-  return pv * Math.pow(1 + r, months) + pmt * (Math.pow(1 + r, months) - 1) / r;
+  return pv * Math.pow(1+r, months) + pmt * (Math.pow(1+r, months) - 1) / r;
 }
+
+// Monthly PMT needed to reach FV, given existing PV growing at annual rate over months
+function calcPMT(target, pv, annualRate, months) {
+  if (months <= 0) return 0;
+  const needed = target - pv;
+  if (needed <= 0) return 0;
+  if (annualRate === 0) return needed / months;
+  const r = annualRate / 12;
+  const factor = Math.pow(1+r, months);
+  // account for PV growth: actual needed = target - pv*(1+r)^n
+  const actualNeeded = target - pv * factor;
+  if (actualNeeded <= 0) return 0;
+  return actualNeeded * r / (factor - 1);
+}
+
 function ms(icon, title, detail) {
   return `<div class="ms"><div class="ms-icon">${icon}</div><div><div class="ms-title">${title}</div><div class="ms-detail">${detail}</div></div></div>`;
+}
+
+// ── GENERATE ──
+function generate() {
+  const d = getData();
+  window.planData = d;
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  render(d);
 }
 
 function render(d) {
   const yr = new Date().getFullYear();
   const fixed = d.rent + d.phone + d.internet + d.util + d.car + d.carins + d.subs;
   const variable = d.groc + d.dining + d.ent + d.cloth + d.other;
-  const debt = d.c1m + d.c2m + d.od;
-  const total = fixed + variable + debt;
+  const debtPay = d.c1m + d.c2m + d.od;
+  const total = fixed + variable + debtPay;
   const surplus = d.income - total;
   const totalDebt = d.c1b + d.c2b;
   const totalSaved = d.sav + d.tfsa + d.rrsp + d.fhsa;
   const efTarget = total * 3;
-  const monthlySave = Math.max(0, surplus * 0.5);
+
+  // Store for downloads
+  window.planCalc = { fixed, variable, debtPay, total, surplus, totalDebt, totalSaved, efTarget };
 
   // Header
   document.getElementById('r-name').textContent = d.name;
-  document.getElementById('r-sub').textContent = `Age ${d.age} · ${d.prov} · ${new Date().toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}`;
+  document.getElementById('r-sub').textContent = `Age ${d.age} · ${d.prov} · Generated ${new Date().toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}`;
   document.getElementById('y3').textContent = yr + 3;
   document.getElementById('y5').textContent = yr + 5;
   document.getElementById('y30').textContent = yr + 30;
 
-  // Summary
-  const sc = surplus > 0 ? 'pos' : surplus < 0 ? 'neg' : '';
-  const efPct = Math.min(100, Math.round(d.sav / efTarget * 100));
+  // Summary cards
+  const efPct = Math.min(100, Math.round(d.sav / Math.max(efTarget, 1) * 100));
   document.getElementById('r-summary').innerHTML = [
-    ['Monthly Income', fmt(d.income), ''],
-    ['Monthly Expenses', fmt(total), ''],
-    ['Monthly Surplus', (surplus < 0 ? '-' : '') + fmt(surplus), sc],
-    ['Total Debt', totalDebt > 0 ? fmt(totalDebt) : 'None!', totalDebt > 0 ? 'neg' : 'pos'],
-    ['Total Saved', fmt(totalSaved), 'pos'],
-    ['Emergency Fund', efPct + '%', efPct >= 100 ? 'pos' : efPct >= 50 ? 'warn' : 'neg'],
-  ].map(([l, v, c]) => `<div class="s-card"><div class="s-label">${l}</div><div class="s-value ${c}">${v}</div></div>`).join('');
+    ['Monthly Income',   fmt(d.income),   ''],
+    ['Monthly Expenses', fmt(total),       ''],
+    ['Monthly Surplus',  (surplus < 0 ? '-' : '') + fmt(surplus), surplus > 0 ? 'pos' : surplus < 0 ? 'neg' : ''],
+    ['Total Debt',       totalDebt > 0 ? fmt(totalDebt) : 'None!', totalDebt > 0 ? 'neg' : 'pos'],
+    ['Total Saved',      fmt(totalSaved), 'pos'],
+    ['Emergency Fund',   efPct + '%',     efPct >= 100 ? 'pos' : efPct >= 50 ? 'warn' : 'neg'],
+  ].map(([l,v,c]) => `<div class="s-card"><div class="s-label">${l}</div><div class="s-value ${c}">${v}</div></div>`).join('');
 
   // Chart
   if (window._chart) window._chart.destroy();
@@ -629,98 +734,397 @@ function render(d) {
     type: 'doughnut',
     data: {
       labels: ['Housing', 'Food', 'Transport', 'Lifestyle', 'Debt', 'Other Bills'],
-      datasets: [{
-        data: [d.rent, d.groc + d.dining, d.car + d.carins, d.ent + d.cloth, debt, d.phone + d.internet + d.util + d.subs + d.other],
-        backgroundColor: ['#3b82f6','#f59e0b','#8b5cf6','#ec4899','#ef4444','#64ffda'],
-        borderColor: '#112240', borderWidth: 3,
-      }]
+      datasets: [{ data: [d.rent, d.groc+d.dining, d.car+d.carins, d.ent+d.cloth, debtPay, d.phone+d.internet+d.util+d.subs+d.other], backgroundColor: ['#3b82f6','#f59e0b','#8b5cf6','#ec4899','#ef4444','#64ffda'], borderColor: '#112240', borderWidth: 3 }]
     },
     options: { plugins: { legend: { position: 'bottom', labels: { color: '#a8b2d8', font: { size: 11 }, padding: 12 } } }, cutout: '65%' }
   });
 
-  // 3-Year
+  // ── GOAL CONTRIBUTION TABLE ──
+  let totalMonthlyPAC = 0;
+  const goalRows = [];
+  const goalPACs = {};
+
+  d.goals.forEach(key => {
+    const gd = d.goalDetails[key];
+    const m = GOAL_META[key];
+    if (!gd || !gd.target) return;
+
+    const needed = Math.max(0, gd.target - gd.saved);
+    const months = Math.round(gd.years * 12);
+    // Use 4% for savings goals, 0% for debt (simple payoff)
+    const rate = key === 'debt' ? 0 : 0.04;
+    const monthly = calcPMT(gd.target, gd.saved, rate, months);
+    const biweekly = monthly * 12 / 26;
+    totalMonthlyPAC += monthly;
+    goalPACs[key] = { monthly, biweekly, needed, months, gd };
+
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() + months);
+    const targetStr = targetDate.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' });
+
+    goalRows.push(`
+      <tr>
+        <td><div class="td-goal">${m.icon} <span>${m.label}</span></div></td>
+        <td class="td-mono">${fmt(gd.target)}</td>
+        <td class="td-mono">${gd.saved > 0 ? fmt(gd.saved) : '—'}</td>
+        <td class="td-mono">${fmt(needed)}</td>
+        <td><div>${gd.years} yr${gd.years !== 1 ? 's' : ''}</div><div class="td-sub">${targetStr}</div></td>
+        <td class="td-teal">${fmtD(monthly)}<div class="td-sub">per month</div></td>
+        <td class="td-teal" style="color:#a8b2d8">${fmtD(biweekly)}<div class="td-sub">biweekly</div></td>
+      </tr>`);
+  });
+
+  // Store for downloads
+  window.planGoalPACs = goalPACs;
+
+  document.getElementById('r-goal-rows').innerHTML = goalRows.length
+    ? goalRows.join('')
+    : '<tr><td colspan="7" style="color:var(--slate);text-align:center;padding:1.5rem">No goal details entered — go back to fill in target amounts and timelines.</td></tr>';
+
+  // Cash flow summary
+  const netCF = surplus - totalMonthlyPAC;
+  const cfBiweekly = totalMonthlyPAC * 12 / 26;
+  let alertHTML = '';
+  if (totalMonthlyPAC === 0) {
+    alertHTML = `<div class="cf-alert warn">No goal amounts entered. Go back to step 8 and fill in your target amounts.</div>`;
+  } else if (netCF >= 0) {
+    alertHTML = `<div class="cf-alert ok">✓ Your surplus covers all goals. You have ${fmt(netCF)}/month left over after contributions.</div>`;
+  } else if (netCF >= -200) {
+    alertHTML = `<div class="cf-alert warn">⚠ You're ${fmt(Math.abs(netCF))}/month short. Small spending cuts (dining, subscriptions) can close this gap.</div>`;
+  } else {
+    alertHTML = `<div class="cf-alert bad">⚠ To meet all goals on time, you need ${fmt(Math.abs(netCF))}/month more in cash flow. Options: extend some timelines, reduce expenses, or increase income.</div>`;
+  }
+
+  document.getElementById('r-cashflow').innerHTML = `
+    <div class="cf-row"><span class="cf-label">Total Monthly Contributions (PAC)</span><span class="cf-value" style="color:#ef4444">-${fmtD(totalMonthlyPAC)}</span></div>
+    <div class="cf-row"><span class="cf-label">Total Biweekly Equivalent</span><span class="cf-value" style="color:#ef4444">-${fmtD(cfBiweekly)}</span></div>
+    <hr class="cf-divider" />
+    <div class="cf-row"><span class="cf-label">Your Monthly Surplus</span><span class="cf-value" style="color:#22c55e">+${fmtD(surplus)}</span></div>
+    <div class="cf-row"><span class="cf-total-label">Net Cash Flow After Goals</span><span class="cf-total-value" style="color:${netCF >= 0 ? '#22c55e' : '#ef4444'}">${netCF >= 0 ? '+' : ''}${fmtD(netCF)}/month</span></div>
+    ${alertHTML}`;
+
+  // ── 3-YEAR MILESTONES ──
+  const monthlySave = Math.max(0, surplus * 0.5);
   const save3 = fv(totalSaved, monthlySave, 0.05, 36);
   const m3 = [];
   if (totalDebt > 0) {
     const extra = surplus > 0 ? surplus * 0.4 : 0;
-    const mo = Math.ceil(totalDebt / (debt + extra));
-    if (mo <= 36) m3.push(ms('🎉', `Debt-Free by ${new Date(Date.now() + mo * 30 * 86400000).toLocaleDateString('en-CA', { month: 'short', year: 'numeric' })}`, `Pay off ${fmt(totalDebt)} by directing extra cash to the highest-rate card first (avalanche method)`));
-    else m3.push(ms('💳', `Reduce Debt to ~${fmt(Math.max(0, totalDebt - (debt + extra) * 36))}`, `Stay consistent — every extra dollar toward the highest-rate card saves the most`));
+    const mo = Math.ceil(totalDebt / (debtPay + extra));
+    if (mo <= 36) m3.push(ms('🎉', `Debt-Free by ${new Date(Date.now() + mo*30*86400000).toLocaleDateString('en-CA',{month:'short',year:'numeric'})}`, `Pay off ${fmt(totalDebt)} — direct every extra dollar to the highest-rate card first`));
+    else m3.push(ms('💳', `Reduce Debt to ~${fmt(Math.max(0, totalDebt - (debtPay+extra)*36))}`, 'Stay consistent — every extra dollar to highest-rate card saves the most'));
   }
-  if (d.sav < efTarget) {
-    const mo = surplus > 0 ? Math.ceil((efTarget - d.sav) / (surplus * 0.4)) : 999;
-    m3.push(ms('🛡️', mo <= 36 ? 'Emergency Fund Complete' : 'Build Emergency Fund', `Target: ${fmt(efTarget)} (3 months expenses) — currently ${efPct}% there`));
-  }
-  m3.push(ms('💰', `Net Worth: ~${fmtK(save3 - Math.max(0, totalDebt - debt * 36))}`, 'Based on consistent saving at 5% average annual growth'));
-  m3.push(ms('📊', 'TFSA: Contribute Up to $21,000', 'Max $7,000/year — tax-free growth is your most powerful Canadian advantage'));
-  if (d.goals.includes('home')) m3.push(ms('🏠', 'Open &amp; Max Your FHSA', `$8,000/year, tax-deductible &amp; tax-free on withdrawal — the best account in Canada for first-time buyers`));
+  if (d.sav < efTarget) m3.push(ms('🛡️', surplus > 0 && Math.ceil((efTarget-d.sav)/(surplus*0.4)) <= 36 ? 'Emergency Fund Complete' : 'Build Emergency Fund', `Target: ${fmt(efTarget)} (3 months of expenses) — currently ${Math.min(100,Math.round(d.sav/Math.max(efTarget,1)*100))}% there`));
+  m3.push(ms('💰', `Net Worth: ~${fmtK(save3 - Math.max(0, totalDebt - debtPay*36))}`, 'Consistent saving at 5% avg annual growth'));
+  m3.push(ms('📊', 'TFSA: Up to $21,000 (3 years × $7,000)', 'Max yearly — tax-free growth is your most powerful Canadian advantage'));
+  if (d.goals.includes('home')) m3.push(ms('🏠', 'Open & Max Your FHSA', '$8,000/year, tax-deductible & tax-free on withdrawal — best account for first-time buyers'));
   document.getElementById('r-3yr').innerHTML = m3.join('');
 
-  // 5-Year
-  const save5 = fv(totalSaved, monthlySave * 1.1, 0.06, 60);
+  // ── 5-YEAR MILESTONES ──
+  const save5 = fv(totalSaved, monthlySave*1.1, 0.06, 60);
   const m5 = [];
   m5.push(ms('💎', `Projected Net Worth: ${fmtK(save5)}`, 'Compound growth across TFSA, RRSP, and savings — keep contributions consistent'));
-  if (totalDebt > 0) m5.push(ms('✅', 'Consumer Debt Fully Eliminated', 'With discipline, all credit card debt can be cleared — freeing up hundreds per month'));
-  if (d.goals.includes('home')) {
-    const dp = fv(d.fhsa + d.sav * 0.4, monthlySave * 0.4, 0.05, 60);
-    m5.push(ms('🏠', `Down Payment Target: ${fmtK(dp)}`, 'Combine FHSA + TFSA for maximum tax advantage on your first home purchase'));
-  }
+  if (totalDebt > 0) m5.push(ms('✅', 'Consumer Debt Fully Eliminated', 'With discipline, all credit card debt cleared — frees up hundreds per month'));
+  if (d.goals.includes('home')) m5.push(ms('🏠', `Down Payment Target: ${fmtK(fv(d.fhsa+d.sav*0.4, monthlySave*0.4, 0.05, 60))}`, 'Combine FHSA + TFSA for maximum tax advantage on your first home purchase'));
   if (d.goals.includes('invest')) m5.push(ms('📈', `TFSA Could Reach ${fmtK(fv(d.tfsa, 583, 0.07, 60))}`, 'At 7% avg return with max $7K/year contributions'));
-  m5.push(ms('🎯', 'Aim for 10–20% Income Growth', 'Through a raise, promotion, or side income — the most powerful lever in any financial plan'));
+  m5.push(ms('🎯', 'Aim for 10–20% Income Growth', 'Through a raise, promotion, or side income — the most powerful lever in any plan'));
   document.getElementById('r-5yr').innerHTML = m5.join('');
 
-  // 30-Year
-  const retire = fv(d.tfsa + d.rrsp + d.fhsa, monthlySave * 1.5, 0.07, 360);
+  // ── 30-YEAR MILESTONES ──
+  const retire = fv(d.tfsa+d.rrsp+d.fhsa, monthlySave*1.5, 0.07, 360);
   const retireAge = d.age + 30;
-  const cpp = 8500;
-  const oas = retireAge >= 65 ? 7707 : 0;
-  const withdrawl = Math.round(retire * 0.04);
-  const retireAnnual = withdrawl + cpp + oas;
+  const cpp = 8500, oas = retireAge >= 65 ? 7707 : 0;
+  const retireAnnual = Math.round(retire*0.04) + cpp + oas;
   const m30 = [];
-  m30.push(ms('🌴', `Retirement Portfolio: ${fmtK(retire)}`, 'Based on consistent investing at 7% avg return — the Canadian market long-term average'));
-  m30.push(ms('💵', `Estimated Annual Retirement Income: ${fmtK(retireAnnual)}`, `4% withdrawal (${fmtK(withdrawl)}) + CPP (~$${cpp.toLocaleString()})${oas ? ` + OAS (~$${oas.toLocaleString()})` : ''}`));
-  m30.push(ms('🏦', 'RRSP → RRIF Conversion by Age 71', 'Maximize RRSP in your peak earning years; convert to RRIF for tax-efficient retirement income'));
-  m30.push(ms('📋', 'Estate Planning by Year 10', 'Will, Power of Attorney, beneficiary designations, and adequate life/disability insurance — non-negotiable'));
-  if (d.goals.includes('home')) m30.push(ms('🏡', 'Mortgage-Free Home', `A 25-year mortgage taken today is fully paid off by ${yr + 25} — your biggest monthly expense disappears`));
+  m30.push(ms('🌴', `Retirement Portfolio: ${fmtK(retire)}`, 'Based on consistent investing at 7% avg return — the Canadian long-term market average'));
+  m30.push(ms('💵', `Est. Annual Retirement Income: ${fmtK(retireAnnual)}`, `4% withdrawal + CPP (~$${cpp.toLocaleString()})${oas ? ` + OAS (~$${oas.toLocaleString()})` : ''}`));
+  m30.push(ms('🏦', 'RRSP → RRIF by Age 71', 'Maximize RRSP in peak earning years; convert to RRIF for tax-efficient retirement income'));
+  m30.push(ms('📋', 'Estate Planning Checklist by Year 10', 'Will, Power of Attorney, beneficiary designations, and adequate life/disability insurance'));
+  if (d.goals.includes('home')) m30.push(ms('🏡', 'Mortgage-Free Home', `A 25-year mortgage taken today is fully paid off by ${yr+25}`));
   document.getElementById('r-30yr').innerHTML = m30.join('');
 
-  // Tips
+  // ── TIPS ──
   const tips = [];
   if (totalDebt > 0) {
-    const highCard = d.c1r >= d.c2r ? 'Card 1' : 'Card 2';
-    tips.push(['Avalanche Method — Save the Most Interest', `Pay minimums on both cards, put every extra dollar toward ${highCard} (${Math.max(d.c1r, d.c2r)}% APR). Once cleared, attack the other. This is mathematically optimal.`]);
+    const hc = d.c1r >= d.c2r ? 'Card 1' : 'Card 2';
+    tips.push(['Avalanche Method — Save the Most Interest', `Pay minimums on both cards, put every extra dollar toward ${hc} (${Math.max(d.c1r,d.c2r)}% APR). Once cleared, attack the other. Mathematically optimal.`]);
   }
-  if (surplus < 0) {
-    tips.push(['You\'re Running a Deficit', `Expenses exceed income by ${fmt(Math.abs(surplus))}/month. Dining ($${d.dining}) and entertainment ($${d.ent}) are the fastest areas to cut without affecting quality of life.`]);
-  } else {
-    tips.push([`You Have ${fmt(surplus)}/Month to Deploy`, `Follow 50/30/20: 50% needs, 30% wants, 20% savings &amp; debt. Right now, prioritize: 1) Emergency fund, 2) Credit card debt, 3) TFSA.`]);
-  }
-  tips.push(['TFSA First — Unless You Earn Over $100K', 'In Canada, max your TFSA ($7,000/year) before RRSP if you\'re under the top bracket. Growth and withdrawals are completely tax-free.']);
-  if (d.goals.includes('home')) tips.push(['The FHSA is Canada\'s Best-Kept Secret', '$8,000/year contribution, tax deduction on the way in, tax-free on the way out. You can hold FHSA + TFSA + RRSP (First Home Buyer\'s Plan) simultaneously for a first home purchase.']);
-  if (d.dining > 250) tips.push([`Dining Out Costs You ${fmt(d.dining * 12)}/Year`, `Cutting dining from $${d.dining} to $${Math.round(d.dining * 0.6)} saves ${fmt(d.dining * 0.4 * 12)}/year — enough to max a TFSA.`]);
-  tips.push(['Automate Everything on Payday', 'Set up automatic transfers the day you get paid: TFSA contribution, emergency fund top-up, extra debt payment. Spend what\'s left — not the other way around.']);
-  tips.push(['The RRSP Refund Loop', 'Contribute to RRSP → get a tax refund → invest the refund in your TFSA. This compound hack can add tens of thousands to your retirement over time.']);
-  if (d.goals.includes('retire')) tips.push(['The Rule of 72', 'Divide 72 by your annual return to find how long money takes to double. At 7%, your investments double every ~10 years. Start early — time is the variable you can\'t buy back.']);
-
-  document.getElementById('r-tips').innerHTML = tips.map(([t, b]) =>
-    `<div class="tip"><div class="tip-title">${t}</div><div class="tip-text">${b}</div></div>`
-  ).join('');
+  if (surplus < 0) tips.push(['You\'re Running a Deficit', `Expenses exceed income by ${fmt(Math.abs(surplus))}/month. Dining (${fmt(d.dining)}) and entertainment (${fmt(d.ent)}) are the fastest areas to trim.`]);
+  else tips.push([`You Have ${fmt(surplus)}/Month to Deploy`, `Follow 50/30/20: 50% needs, 30% wants, 20% goals. Priority: 1) Emergency fund → 2) Credit card debt → 3) TFSA → 4) RRSP`]);
+  tips.push(['TFSA First — Unless You Earn Over ~$100K', 'Max your TFSA ($7,000/year) before RRSP if you\'re in a lower bracket. Growth and withdrawals are completely tax-free.']);
+  if (d.goals.includes('home')) tips.push(['The FHSA is Canada\'s Best-Kept Secret', '$8,000/year contribution, tax deduction in, tax-free out. Hold FHSA + TFSA + RRSP Home Buyers\' Plan simultaneously for maximum first-home advantage.']);
+  if (d.dining > 250) tips.push([`Dining Out Costs You ${fmt(d.dining*12)}/Year`, `Cutting from $${d.dining} to $${Math.round(d.dining*0.6)}/month saves ${fmt(d.dining*0.4*12)}/year — enough for a full TFSA contribution.`]);
+  tips.push(['Automate Your PAC on Payday', 'Set automatic transfers the day you\'re paid: goal contributions first, spend what\'s left. This one habit beats willpower every time.']);
+  tips.push(['The RRSP Refund Loop', 'Contribute to RRSP → get a tax refund → invest the refund into your TFSA. This compound hack adds tens of thousands to retirement over time.']);
+  if (d.goals.includes('retire')) tips.push(['The Rule of 72', 'Divide 72 by your annual return to know when money doubles. At 7%, investments double every ~10 years. Time is the one variable you cannot buy back.']);
+  document.getElementById('r-tips').innerHTML = tips.map(([t,b]) => `<div class="tip"><div class="tip-title">${t}</div><div class="tip-text">${b}</div></div>`).join('');
 }
 
-function reset() {
+// ── PDF DOWNLOAD ──
+function downloadPDF() {
+  const d = window.planData;
+  if (!d) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const c = window.planCalc;
+  const pacs = window.planGoalPACs || {};
+  const yr = new Date().getFullYear();
+  let y = 18;
+
+  function setTeal()  { doc.setTextColor(100, 255, 218); }
+  function setWhite() { doc.setTextColor(204, 214, 246); }
+  function setGray()  { doc.setTextColor(136, 146, 176); }
+  function setGreen() { doc.setTextColor(34, 197, 94); }
+  function setRed()   { doc.setTextColor(239, 68, 68); }
+  function line(yPos) { doc.setDrawColor(35, 53, 84); doc.line(14, yPos, 196, yPos); }
+
+  // Header background
+  doc.setFillColor(17, 34, 64);
+  doc.rect(0, 0, 210, 40, 'F');
+  setTeal(); doc.setFontSize(18); doc.setFont(undefined, 'bold');
+  doc.text(`FINANCIAL PLAN — ${d.name.toUpperCase()}`, 14, 16);
+  setGray(); doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  doc.text(`Age ${d.age} · ${d.prov} · Generated ${new Date().toLocaleDateString('en-CA')}`, 14, 26);
+  setTeal(); doc.text('kevinraphael.ca', 14, 34);
+  y = 50;
+
+  // Monthly Budget
+  setWhite(); doc.setFontSize(12); doc.setFont(undefined, 'bold');
+  doc.text('MONTHLY BUDGET SUMMARY', 14, y); y += 6; line(y); y += 6;
+  const budgetItems = [
+    ['Monthly Income', d.income, 'green'],
+    ['Housing', d.rent], ['Food & Groceries', d.groc+d.dining],
+    ['Transport', d.car+d.carins], ['Lifestyle', d.ent+d.cloth],
+    ['Bills & Subscriptions', d.phone+d.internet+d.util+d.subs+d.other],
+    ['Debt Payments', c.debtPay],
+  ];
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  budgetItems.forEach(([label, amount, color]) => {
+    setGray(); doc.text(label, 14, y);
+    if (color === 'green') setGreen(); else setWhite();
+    doc.text(fmt(amount), 196, y, { align: 'right' });
+    y += 6;
+  });
+  line(y); y += 5;
+  doc.setFont(undefined, 'bold');
+  setGray(); doc.text('Total Expenses', 14, y);
+  setWhite(); doc.text(fmt(c.total), 196, y, { align: 'right' }); y += 6;
+  setGray(); doc.text('Monthly Surplus', 14, y);
+  if (c.surplus >= 0) setGreen(); else setRed();
+  doc.text((c.surplus >= 0 ? '+' : '') + fmt(c.surplus), 196, y, { align: 'right' });
+  y += 14;
+
+  // Goal Contributions
+  if (d.goals.length > 0) {
+    setWhite(); doc.setFontSize(12); doc.setFont(undefined, 'bold');
+    doc.text('GOAL CONTRIBUTION PLAN (PRE-AUTHORIZED)', 14, y); y += 6; line(y); y += 6;
+    doc.setFontSize(8); doc.setFont(undefined, 'bold');
+    setTeal();
+    doc.text('GOAL', 14, y); doc.text('TARGET', 70, y); doc.text('SAVED', 100, y);
+    doc.text('TIMELINE', 130, y); doc.text('MONTHLY PAC', 162, y, { align: 'right' }); doc.text('BIWEEKLY', 196, y, { align: 'right' });
+    y += 5; line(y); y += 5;
+    doc.setFont(undefined, 'normal');
+    let totalPAC = 0;
+    d.goals.forEach(key => {
+      const gd = d.goalDetails[key];
+      if (!gd || !gd.target) return;
+      const p = pacs[key];
+      if (!p) return;
+      setWhite(); doc.text(`${GOAL_META[key].icon} ${GOAL_META[key].label}`, 14, y);
+      setGray(); doc.text(fmt(gd.target), 70, y);
+      doc.text(gd.saved > 0 ? fmt(gd.saved) : '—', 100, y);
+      doc.text(`${gd.years} yr${gd.years !== 1 ? 's' : ''}`, 130, y);
+      setTeal(); doc.text(fmtD(p.monthly), 162, y, { align: 'right' });
+      setGray(); doc.text(fmtD(p.biweekly), 196, y, { align: 'right' });
+      totalPAC += p.monthly; y += 7;
+    });
+    line(y); y += 5;
+    const netCF = c.surplus - totalPAC;
+    doc.setFont(undefined, 'bold');
+    setGray(); doc.text('Total Monthly PAC', 14, y);
+    setRed(); doc.text('-' + fmtD(totalPAC), 162, y, { align: 'right' }); y += 7;
+    setGray(); doc.text('Net Cash Flow After Goals', 14, y);
+    if (netCF >= 0) setGreen(); else setRed();
+    doc.text((netCF >= 0 ? '+' : '') + fmtD(netCF) + '/month', 196, y, { align: 'right' });
+    if (netCF < 0) {
+      y += 7;
+      setRed(); doc.setFont(undefined, 'normal'); doc.setFontSize(8);
+      doc.text(`⚠ Shortfall: Increase cash flow by ${fmt(Math.abs(netCF))}/month, extend timelines, or reduce expenses.`, 14, y);
+    }
+    y += 14;
+  }
+
+  // New page for milestones
+  if (y > 220) { doc.addPage(); y = 20; }
+  setWhite(); doc.setFontSize(12); doc.setFont(undefined, 'bold');
+  doc.text(`3-YEAR MILESTONES (by ${yr+3})`, 14, y); y += 6; line(y); y += 5;
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  const m3tips = [`Build emergency fund to ${fmt(c.efTarget)}`, `Contribute $7,000/year to TFSA`, `Pay down credit card debt aggressively`, d.goals.includes('home') ? 'Open FHSA — $8,000/year contribution' : 'Automate monthly PAC contributions'];
+  m3tips.forEach(t => { setGray(); doc.text('•', 14, y); setWhite(); doc.text(t, 20, y); y += 6; });
+  y += 6;
+  setWhite(); doc.setFontSize(12); doc.setFont(undefined, 'bold');
+  doc.text(`5-YEAR MILESTONES (by ${yr+5})`, 14, y); y += 6; line(y); y += 5;
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  const m5tips = [`Net worth: ${fmtK(fv(c.totalSaved, Math.max(0,c.surplus*0.5*1.1), 0.06, 60))}`, `Consumer debt fully eliminated`, `TFSA maximized — up to $35,000 contributed`, `10-20% income growth through skills or promotion`];
+  m5tips.forEach(t => { setGray(); doc.text('•', 14, y); setWhite(); doc.text(t, 20, y); y += 6; });
+  y += 6;
+  setWhite(); doc.setFontSize(12); doc.setFont(undefined, 'bold');
+  doc.text(`30-YEAR PLAN (by ${yr+30})`, 14, y); y += 6; line(y); y += 5;
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  const retire30 = fv(d.tfsa+d.rrsp+d.fhsa, Math.max(0,c.surplus*0.5*1.5), 0.07, 360);
+  const m30tips = [`Retirement portfolio: ${fmtK(retire30)}`, `Est. annual income: ${fmtK(Math.round(retire30*0.04+8500+(d.age+30>=65?7707:0))}`, `RRSP converted to RRIF by age 71`, d.goals.includes('home') ? `Mortgage-free by ${yr+25}` : 'Review estate plan & insurance coverage'];
+  m30tips.forEach(t => { setGray(); doc.text('•', 14, y); setWhite(); doc.text(t, 20, y); y += 6; });
+
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    setGray(); doc.setFontSize(7);
+    doc.text('Generated by Kevin Raphael Financial Planner · kevinraphael.ca · For informational purposes only. Consult a licensed financial advisor.', 14, 290);
+    doc.text(`Page ${i} of ${pageCount}`, 196, 290, { align: 'right' });
+  }
+
+  doc.save(`${d.name.toLowerCase().replace(/\s/g,'-')}-financial-plan.pdf`);
+}
+
+// ── EXCEL DOWNLOAD ──
+function downloadExcel() {
+  const d = window.planData;
+  if (!d) return;
+  const c = window.planCalc;
+  const pacs = window.planGoalPACs || {};
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Monthly Budget
+  const budgetRows = [
+    [`Financial Plan for ${d.name}`, '', ''],
+    [`Age ${d.age} · ${d.prov} · ${new Date().toLocaleDateString('en-CA')}`, '', ''],
+    ['', '', ''],
+    ['MONTHLY BUDGET', '', ''],
+    ['Category', 'Monthly Amount ($)', ''],
+    ['Monthly Take-Home Income', d.income, ''],
+    ['', '', ''],
+    ['EXPENSES', '', ''],
+    ['Rent / Mortgage', d.rent, ''],
+    ['Phone', d.phone, ''],
+    ['Internet', d.internet, ''],
+    ['Utilities', d.util, ''],
+    ['Car Payment', d.car, ''],
+    ['Car Insurance', d.carins, ''],
+    ['Subscriptions', d.subs, ''],
+    ['Groceries', d.groc, ''],
+    ['Dining Out', d.dining, ''],
+    ['Entertainment', d.ent, ''],
+    ['Clothing / Personal Care', d.cloth, ''],
+    ['Other Spending', d.other, ''],
+    ['Credit Card 1 (min payment)', d.c1m, ''],
+    ['Credit Card 2 (min payment)', d.c2m, ''],
+    ['Other Debt Payments', d.od, ''],
+    ['', '', ''],
+    ['TOTAL EXPENSES', c.total, ''],
+    ['MONTHLY SURPLUS', c.surplus, ''],
+    ['', '', ''],
+    ['SAVINGS & DEBT', '', ''],
+    ['Bank / Emergency Savings', d.sav, ''],
+    ['TFSA Balance', d.tfsa, ''],
+    ['RRSP Balance', d.rrsp, ''],
+    ['FHSA Balance', d.fhsa, ''],
+    ['Total Saved', c.totalSaved, ''],
+    ['Total Credit Card Debt', c.totalDebt, ''],
+    ['Emergency Fund Target (3 months)', c.efTarget, ''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(budgetRows);
+  ws1['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 15 }];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Monthly Budget');
+
+  // Sheet 2: Goal Contribution Plan
+  const goalRows = [
+    [`Goal Contribution Plan (PAC) — ${d.name}`, '', '', '', '', '', ''],
+    ['', '', '', '', '', '', ''],
+    ['Goal', 'Target ($)', 'Already Saved ($)', 'Still Needed ($)', 'Timeline (yrs)', 'Monthly PAC ($)', 'Biweekly PAC ($)'],
+  ];
+  let totalMonthlyPAC = 0;
+  d.goals.forEach(key => {
+    const gd = d.goalDetails[key];
+    if (!gd || !gd.target) return;
+    const p = pacs[key];
+    if (!p) return;
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() + Math.round(gd.years * 12));
+    goalRows.push([
+      `${GOAL_META[key].label}`,
+      gd.target, gd.saved,
+      Math.max(0, gd.target - gd.saved),
+      `${gd.years} years (by ${targetDate.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' })})`,
+      parseFloat(p.monthly.toFixed(2)),
+      parseFloat(p.biweekly.toFixed(2)),
+    ]);
+    totalMonthlyPAC += p.monthly;
+  });
+  const netCF = c.surplus - totalMonthlyPAC;
+  goalRows.push(
+    ['', '', '', '', '', '', ''],
+    ['TOTALS', '', '', '', '', parseFloat(totalMonthlyPAC.toFixed(2)), parseFloat((totalMonthlyPAC*12/26).toFixed(2))],
+    ['', '', '', '', '', '', ''],
+    ['Monthly Surplus', c.surplus, '', '', '', '', ''],
+    ['Net Cash Flow After Goals', netCF, '', '', '', '', ''],
+    ['', '', '', '', '', '', ''],
+    [netCF >= 0 ? `✓ Surplus covers all goals — $${Math.abs(netCF).toFixed(2)}/month remaining` : `⚠ Shortfall: Need $${Math.abs(netCF).toFixed(2)}/month more (extend timelines or reduce expenses)`, '', '', '', '', '', ''],
+    ['', '', '', '', '', '', ''],
+    ['NOTE: Contributions assume 4% annual growth on savings goals. Consult a licensed advisor.', '', '', '', '', '', ''],
+  );
+  const ws2 = XLSX.utils.aoa_to_sheet(goalRows);
+  ws2['!cols'] = [{ wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 16 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Goal Plan (PAC)');
+
+  // Sheet 3: Milestones
+  const yr = new Date().getFullYear();
+  const retire30 = fv(d.tfsa+d.rrsp+d.fhsa, Math.max(0,c.surplus*0.5*1.5), 0.07, 360);
+  const milestoneRows = [
+    [`Financial Milestones — ${d.name}`, ''],
+    ['', ''],
+    [`3-YEAR PLAN (by ${yr+3})`, ''],
+    ['Goal', 'Detail'],
+    ['Emergency Fund', `Target: ${fmt(c.efTarget)} — currently ${Math.min(100,Math.round(d.sav/Math.max(c.efTarget,1)*100))}% funded`],
+    ['TFSA Contribution', `Up to $21,000 over 3 years ($7,000/year)`],
+    ['Debt Elimination', c.totalDebt > 0 ? `Pay off ${fmt(c.totalDebt)} in credit card debt` : 'No credit card debt — great!'],
+    [d.goals.includes('home') ? 'FHSA' : 'Automate PAC', d.goals.includes('home') ? 'Open FHSA — $8,000/year, tax-deductible' : 'Set automated contributions on payday'],
+    ['', ''],
+    [`5-YEAR PLAN (by ${yr+5})`, ''],
+    ['Net Worth', fmtK(fv(c.totalSaved, Math.max(0,c.surplus*0.5*1.1), 0.06, 60))],
+    ['Consumer Debt', 'Fully eliminated'],
+    ['TFSA', `Up to $35,000 contributed over 5 years`],
+    ['Income Growth', 'Target 10–20% increase through career or side income'],
+    ['', ''],
+    [`30-YEAR PLAN (by ${yr+30})`, ''],
+    ['Retirement Portfolio', fmtK(retire30)],
+    ['Est. Annual Retirement Income', fmtK(Math.round(retire30*0.04+8500+(d.age+30>=65?7707:0)))],
+    ['RRSP', 'Convert to RRIF by age 71'],
+    ['Estate Planning', 'Will, POA, beneficiary designations, insurance by year 10'],
+    d.goals.includes('home') ? ['Home', `Mortgage-free by ${yr+25}`] : ['Investment', 'Portfolio fully diversified'],
+    ['', ''],
+    ['DISCLAIMER', 'For informational purposes only. Projections assume consistent contributions and average market returns. Consult a licensed Canadian financial advisor for personalized advice.'],
+  ];
+  const ws3 = XLSX.utils.aoa_to_sheet(milestoneRows);
+  ws3['!cols'] = [{ wch: 30 }, { wch: 55 }];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Milestones');
+
+  XLSX.writeFile(wb, `${d.name.toLowerCase().replace(/\s/g,'-')}-financial-plan.xlsx`);
+}
+
+function resetPlan() {
   document.getElementById('results').style.display = 'none';
   document.getElementById('wizard').style.display = 'block';
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   document.getElementById('step-1').classList.add('active');
-  curStep = 1;
-  updateProg();
+  document.querySelectorAll('.goal-opt').forEach(el => el.classList.remove('selected'));
+  curStep = 1; updateProg();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── TRACKER ──
 function key(y, m) { return `tr_${y}_${m}`; }
 function load() { return JSON.parse(localStorage.getItem(key(tYear, tMonth)) || '{}'); }
-function save(d) { localStorage.setItem(key(tYear, tMonth), JSON.stringify(d)); }
+function save(dt) { localStorage.setItem(key(tYear, tMonth), JSON.stringify(dt)); }
 
 function changeMonth(dir) {
   tMonth += dir;
@@ -730,133 +1134,84 @@ function changeMonth(dir) {
 }
 
 function renderTracker() {
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('month-label').textContent = `${MONTHS[tMonth]} ${tYear}`;
-
+  const MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('month-label').textContent = `${MN[tMonth]} ${tYear}`;
   const data = load();
   const today = new Date();
   let monthTotal = 0;
   const catTotals = {};
-
-  Object.values(data).forEach(arr => arr.forEach(e => {
-    monthTotal += e.amount;
-    catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
-  }));
-
+  Object.values(data).forEach(arr => arr.forEach(e => { monthTotal += e.amount; catTotals[e.category] = (catTotals[e.category]||0)+e.amount; }));
   const budget = parseFloat(localStorage.getItem('budget') || 0);
   const rem = budget > 0 ? budget - monthTotal : null;
-  const topCat = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a])[0];
-
+  const topCat = Object.keys(catTotals).sort((a,b) => catTotals[b]-catTotals[a])[0];
   document.getElementById('tracker-stats').innerHTML = `
     <div class="ts"><div class="ts-lbl">Total Spent</div><div class="ts-val bad">$${monthTotal.toFixed(2)}</div></div>
     ${budget > 0
       ? `<div class="ts"><div class="ts-lbl">Budget</div><div class="ts-val">$${budget.toFixed(2)}</div></div>
-         <div class="ts"><div class="ts-lbl">Remaining</div><div class="ts-val ${rem >= 0 ? 'good' : 'bad'}">$${Math.abs(rem).toFixed(2)} ${rem < 0 ? 'over' : 'left'}</div></div>`
-      : `<div class="ts" onclick="setBudget()" style="cursor:pointer"><div class="ts-lbl">Monthly Budget</div><div class="ts-val link">Set a budget →</div></div>`
-    }
-    <div class="ts"><div class="ts-lbl">Top Category</div><div class="ts-val" style="font-size:1rem">${topCat ? CATS[topCat].label : '—'}</div></div>
-  `;
-
-  document.getElementById('cat-legend').innerHTML = Object.entries(catTotals)
-    .sort((a, b) => b[1] - a[1])
-    .map(([cat, t]) => `<div class="cat-badge"><div class="cat-dot" style="background:${CATS[cat].color}"></div><span class="cat-name">${CATS[cat].label}</span><span class="cat-amt">$${t.toFixed(2)}</span></div>`)
-    .join('');
-
-  const firstDay = new Date(tYear, tMonth, 1).getDay();
-  const daysInMonth = new Date(tYear, tMonth + 1, 0).getDate();
+         <div class="ts"><div class="ts-lbl">Remaining</div><div class="ts-val ${rem>=0?'good':'bad'}">$${Math.abs(rem).toFixed(2)} ${rem<0?'over':'left'}</div></div>`
+      : `<div class="ts" onclick="setBudget()" style="cursor:pointer"><div class="ts-lbl">Monthly Budget</div><div class="ts-val link">Set a budget →</div></div>`}
+    <div class="ts"><div class="ts-lbl">Top Category</div><div class="ts-val" style="font-size:1rem">${topCat?CATS[topCat].label:'—'}</div></div>`;
+  document.getElementById('cat-legend').innerHTML = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([cat,t])=>`<div class="cat-badge"><div class="cat-dot" style="background:${CATS[cat].color}"></div><span class="cat-name">${CATS[cat].label}</span><span class="cat-amt">$${t.toFixed(2)}</span></div>`).join('');
+  const firstDay = new Date(tYear,tMonth,1).getDay();
+  const daysInMonth = new Date(tYear,tMonth+1,0).getDate();
   const grid = document.getElementById('cal-grid');
   grid.innerHTML = '';
-
-  for (let i = 0; i < firstDay; i++) {
-    const c = document.createElement('div');
-    c.className = 'cal-cell empty';
-    grid.appendChild(c);
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const isToday = today.getFullYear() === tYear && today.getMonth() === tMonth && today.getDate() === d;
-    const dayData = data[d] || [];
-    const dayTotal = dayData.reduce((s, e) => s + e.amount, 0);
+  for (let i=0;i<firstDay;i++){const c=document.createElement('div');c.className='cal-cell empty';grid.appendChild(c);}
+  for (let d=1;d<=daysInMonth;d++){
+    const isToday = today.getFullYear()===tYear&&today.getMonth()===tMonth&&today.getDate()===d;
+    const dayData = data[d]||[];
+    const dayTotal = dayData.reduce((s,e)=>s+e.amount,0);
     const cell = document.createElement('div');
-    cell.className = 'cal-cell' + (isToday ? ' today' : '');
-    cell.onclick = () => openModal(d);
-    cell.innerHTML = `
-      <div class="cal-date">${d}</div>
-      ${dayTotal > 0 ? `<div class="cal-total">-$${dayTotal.toFixed(2)}</div>` : ''}
-      ${dayData.slice(0, 2).map(e => `<div class="cal-entry" style="color:${CATS[e.category].color}">${e.desc}</div>`).join('')}
-      ${dayData.length > 2 ? `<div class="cal-entry" style="color:var(--slate)">+${dayData.length - 2} more</div>` : ''}
-      <div class="cal-plus">+</div>
-    `;
+    cell.className='cal-cell'+(isToday?' today':'');
+    cell.onclick=()=>openModal(d);
+    cell.innerHTML=`<div class="cal-date">${d}</div>${dayTotal>0?`<div class="cal-total">-$${dayTotal.toFixed(2)}</div>`:''}${dayData.slice(0,2).map(e=>`<div class="cal-entry" style="color:${CATS[e.category].color}">${e.desc}</div>`).join('')}${dayData.length>2?`<div class="cal-entry" style="color:var(--slate)">+${dayData.length-2} more</div>`:''}<div class="cal-plus">+</div>`;
     grid.appendChild(cell);
   }
 }
 
 function openModal(day) {
-  activeDay = day;
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('modal-title').textContent = `${MONTHS[tMonth]} ${day}, ${tYear}`;
+  activeDay=day;
+  const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('modal-title').textContent=`${MN[tMonth]} ${day}, ${tYear}`;
   renderModalList();
   document.getElementById('modal').classList.add('open');
-  setTimeout(() => document.getElementById('e-desc').focus(), 100);
+  setTimeout(()=>document.getElementById('e-desc').focus(),100);
 }
 
 function renderModalList() {
-  const data = load();
-  const dayData = data[activeDay] || [];
-  if (!dayData.length) {
-    document.getElementById('modal-list').innerHTML = '<p style="color:var(--slate);font-size:0.83rem;padding:0.25rem 0">No expenses yet.</p>';
-    return;
-  }
-  document.getElementById('modal-list').innerHTML = dayData.map((e, i) => `
-    <div class="exp-item">
-      <div>
-        <div class="exp-name">${e.desc}</div>
-        <div class="exp-cat" style="color:${CATS[e.category].color}">${CATS[e.category].label}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:0.5rem">
-        <div class="exp-amt">-$${e.amount.toFixed(2)}</div>
-        <button class="exp-del" onclick="delExpense(${i})">✕</button>
-      </div>
-    </div>
-  `).join('');
+  const data=load();const dayData=data[activeDay]||[];
+  if(!dayData.length){document.getElementById('modal-list').innerHTML='<p style="color:var(--slate);font-size:0.83rem;padding:0.25rem 0">No expenses yet.</p>';return;}
+  document.getElementById('modal-list').innerHTML=dayData.map((e,i)=>`<div class="exp-item"><div><div class="exp-name">${e.desc}</div><div class="exp-cat" style="color:${CATS[e.category].color}">${CATS[e.category].label}</div></div><div style="display:flex;align-items:center;gap:0.5rem"><div class="exp-amt">-$${e.amount.toFixed(2)}</div><button class="exp-del" onclick="delExpense(${i})">✕</button></div></div>`).join('');
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
-  document.getElementById('e-desc').value = '';
-  document.getElementById('e-amt').value = '';
-  activeDay = null;
-  renderTracker();
+  document.getElementById('e-desc').value='';document.getElementById('e-amt').value='';
+  activeDay=null;renderTracker();
 }
 
 function addExpense() {
-  const desc = document.getElementById('e-desc').value.trim();
-  const amount = parseFloat(document.getElementById('e-amt').value);
-  const category = document.getElementById('e-cat').value;
-  if (!desc || !amount || amount <= 0) { alert('Please enter a description and amount.'); return; }
-  const data = load();
-  if (!data[activeDay]) data[activeDay] = [];
-  data[activeDay].push({ desc, amount, category });
-  save(data);
-  document.getElementById('e-desc').value = '';
-  document.getElementById('e-amt').value = '';
+  const desc=document.getElementById('e-desc').value.trim();
+  const amount=parseFloat(document.getElementById('e-amt').value);
+  const category=document.getElementById('e-cat').value;
+  if(!desc||!amount||amount<=0){alert('Please enter a description and amount.');return;}
+  const data=load();if(!data[activeDay])data[activeDay]=[];
+  data[activeDay].push({desc,amount,category});save(data);
+  document.getElementById('e-desc').value='';document.getElementById('e-amt').value='';
   renderModalList();
 }
 
 function delExpense(i) {
-  const data = load();
-  data[activeDay].splice(i, 1);
-  save(data);
-  renderModalList();
+  const data=load();data[activeDay].splice(i,1);save(data);renderModalList();
 }
 
 function setBudget() {
-  const b = prompt('Enter your monthly spending budget ($):');
-  if (b && !isNaN(parseFloat(b))) { localStorage.setItem('budget', parseFloat(b)); renderTracker(); }
+  const b=prompt('Enter your monthly spending budget ($):');
+  if(b&&!isNaN(parseFloat(b))){localStorage.setItem('budget',parseFloat(b));renderTracker();}
 }
 
-document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && activeDay !== null) addExpense(); });
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&activeDay!==null)addExpense();});
 
 renderTracker();
 </script>
