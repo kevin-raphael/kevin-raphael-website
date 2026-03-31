@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial Planner | Kevin Raphael</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --navy: #0a192f;
+      --teal: #64ffda;
+      --slate: #8892b0;
+      --light-slate: #a8b2d8;
+      --lightest-slate: #ccd6f6;
+      --card-bg: #112240;
+      --card-border: #233554;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--navy); color: var(--slate); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    nav {
+      position: fixed; top: 0; width: 100%;
+      background: rgba(10,25,47,0.95); backdrop-filter: blur(10px);
+      z-index: 100; padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--card-border);
+    }
+    nav .logo { color: var(--teal); font-size: 1.3rem; font-weight: 700; text-decoration: none; }
+    nav .back-link { color: var(--lightest-slate); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    nav .back-link:hover { color: var(--teal); }
+
+    main { padding-top: 64px; }
+
+    .tabs {
+      display: flex; border-bottom: 1px solid var(--card-border);
+      padding: 0 2rem; background: rgba(10,25,47,0.6); position: sticky; top: 64px; z-index: 50;
+    }
+    .tab-btn {
+      padding: 1rem 1.5rem; background: none; border: none; color: var(--slate);
+      font-size: 0.9rem; cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.2s; font-family: inherit; letter-spacing: 0.5px;
+    }
+    .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+    .tab-btn:hover { color: var(--lightest-slate); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* WIZARD */
+    .wizard { max-width: 680px; margin: 3rem auto; padding: 0 1.5rem; }
+    .wizard-header { margin-bottom: 2rem; }
+    .wizard-title { color: var(--lightest-slate); font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .wizard-sub { color: var(--slate); font-size: 0.95rem; }
+
+    .progress-wrap { background: var(--card-border); border-radius: 4px; height: 4px; margin-bottom: 0.4rem; }
+    .progress-fill { height: 100%; background: var(--teal); border-radius: 4px; transition: width 0.4s ease; }
+    .progress-label { color: var(--teal); font-family: monospace; font-size: 0.8rem; text-align: right; margin-bottom: 1.5rem; }
+
+    .step { display: none; animation: fadeUp 0.3s ease; }
+    .step.active { display: block; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .step-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; }
+    .step-num { color: var(--teal); font-family: monospace; font-size: 0.82rem; margin-bottom: 0.4rem; }
+    .step-heading { color: var(--lightest-slate); font-size: 1.25rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .step-desc { color: var(--slate); font-size: 0.88rem; margin-bottom: 1.5rem; }
+
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; color: var(--light-slate); font-size: 0.85rem; margin-bottom: 0.35rem; }
+    .field input, .field select {
+      width: 100%; background: var(--navy); border: 1px solid var(--card-border);
+      color: var(--lightest-slate); padding: 0.7rem 1rem; border-radius: 6px;
+      font-size: 0.93rem; font-family: inherit; outline: none; transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--teal); }
+    .field input::placeholder { color: var(--slate); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .cc-block { background: var(--navy); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .cc-label { color: var(--teal); font-family: monospace; font-size: 0.78rem; margin-bottom: 0.75rem; letter-spacing: 0.5px; }
+
+    .goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .goal-opt {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: var(--navy); border: 1px solid var(--card-border); border-radius: 8px;
+      padding: 0.75rem 1rem; cursor: pointer; transition: all 0.2s; user-select: none;
+    }
+    .goal-opt:hover { border-color: var(--teal); }
+    .goal-opt.selected { border-color: var(--teal); background: rgba(100,255,218,0.05); }
+    .goal-opt input { display: none; }
+    .goal-icon { font-size: 1.3rem; }
+    .goal-label { color: var(--lightest-slate); font-size: 0.88rem; }
+
+    .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
+    .btn {
+      padding: 0.8rem 1.6rem; border-radius: 6px; font-size: 0.9rem;
+      cursor: pointer; border: none; font-family: inherit; letter-spacing: 0.5px; transition: all 0.2s;
+    }
+    .btn-outline { background: transparent; color: var(--teal); border: 1px solid var(--teal); flex: 1; }
+    .btn-outline:hover { background: rgba(100,255,218,0.08); }
+    .btn-ghost { background: transparent; color: var(--slate); border: 1px solid var(--card-border); }
+    .btn-ghost:hover { color: var(--lightest-slate); border-color: var(--light-slate); }
+    .btn-solid { background: var(--teal); color: var(--navy); font-weight: 700; flex: 1; }
+    .btn-solid:hover { opacity: 0.88; }
+
+    /* RESULTS */
+    #results { display: none; }
+    .results-wrap { max-width: 880px; margin: 3rem auto; padding: 0 1.5rem; }
+    .res-header { text-align: center; margin-bottom: 3rem; }
+    .res-title { color: var(--lightest-slate); font-size: 2rem; font-weight: 700; }
+    .res-name { color: var(--teal); }
+    .res-sub { color: var(--slate); font-size: 0.9rem; margin-top: 0.3rem; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .s-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 1.25rem; text-align: center; }
+    .s-label { color: var(--slate); font-size: 0.75rem; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem; }
+    .s-value { color: var(--lightest-slate); font-size: 1.6rem; font-weight: 700; }
+    .s-value.pos { color: #22c55e; }
+    .s-value.neg { color: #ef4444; }
+    .s-value.warn { color: #f59e0b; }
+
+    .chart-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 2rem; margin-bottom: 2rem; }
+    .chart-title { color: var(--lightest-slate); font-size: 1rem; font-weight: 600; margin-bottom: 1.5rem; }
+    .chart-wrap { max-width: 280px; margin: 0 auto; }
+
+    .plan-block { margin-bottom: 2.5rem; }
+    .plan-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .yr-badge { background: rgba(100,255,218,0.1); color: var(--teal); border: 1px solid rgba(100,255,218,0.3); padding: 0.2rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-family: monospace; }
+    .plan-title { color: var(--lightest-slate); font-size: 1.2rem; font-weight: 600; }
+
+    .milestones { display: flex; flex-direction: column; gap: 0.75rem; }
+    .ms { display: flex; align-items: flex-start; gap: 1rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem 1.25rem; }
+    .ms-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .ms-title { color: var(--lightest-slate); font-size: 0.93rem; font-weight: 600; }
+    .ms-detail { color: var(--slate); font-size: 0.83rem; margin-top: 0.15rem; }
+
+    .tips { display: flex; flex-direction: column; gap: 0.75rem; }
+    .tip { background: var(--card-bg); border: 1px solid var(--card-border); border-left: 3px solid var(--teal); border-radius: 8px; padding: 1rem 1.25rem; }
+    .tip-title { color: var(--teal); font-size: 0.82rem; font-family: monospace; margin-bottom: 0.2rem; }
+    .tip-text { color: var(--slate); font-size: 0.88rem; }
+
+    .reset-btn {
+      display: block; margin: 2rem auto 0; background: transparent;
+      color: var(--slate); border: 1px solid var(--card-border);
+      padding: 0.7rem 1.5rem; border-radius: 6px; cursor: pointer;
+      font-family: inherit; font-size: 0.85rem; transition: all 0.2s;
+    }
+    .reset-btn:hover { color: var(--teal); border-color: var(--teal); }
+
+    /* TRACKER */
+    .tracker-wrap { max-width: 880px; margin: 3rem auto; padding: 0 1.5rem; }
+    .tracker-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+    .tracker-title { color: var(--lightest-slate); font-size: 1.5rem; font-weight: 600; }
+    .month-nav { display: flex; align-items: center; gap: 0.75rem; }
+    .month-nav button { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--lightest-slate); width: 34px; height: 34px; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+    .month-nav button:hover { border-color: var(--teal); color: var(--teal); }
+    .month-label { color: var(--teal); font-family: monospace; font-size: 0.95rem; min-width: 150px; text-align: center; }
+
+    .tracker-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .ts { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem 1.25rem; }
+    .ts-lbl { color: var(--slate); font-size: 0.75rem; font-family: monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.2rem; }
+    .ts-val { color: var(--lightest-slate); font-size: 1.35rem; font-weight: 700; }
+    .ts-val.good { color: #22c55e; }
+    .ts-val.bad { color: #ef4444; }
+    .ts-val.link { color: var(--teal); font-size: 0.9rem; cursor: pointer; }
+
+    .cat-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .cat-badge { display: flex; align-items: center; gap: 0.35rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.76rem; }
+    .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .cat-name { color: var(--light-slate); }
+    .cat-amt { color: var(--teal); font-family: monospace; margin-left: 0.2rem; }
+
+    .calendar { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; overflow: hidden; }
+    .cal-header { display: grid; grid-template-columns: repeat(7,1fr); background: rgba(100,255,218,0.04); border-bottom: 1px solid var(--card-border); }
+    .cal-dn { text-align: center; padding: 0.65rem; color: var(--teal); font-family: monospace; font-size: 0.78rem; letter-spacing: 0.5px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+    .cal-cell { border-right: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); min-height: 88px; padding: 0.45rem 0.5rem; cursor: pointer; transition: background 0.15s; position: relative; }
+    .cal-cell:nth-child(7n) { border-right: none; }
+    .cal-cell:hover { background: rgba(100,255,218,0.03); }
+    .cal-cell.empty { cursor: default; background: rgba(0,0,0,0.1); }
+    .cal-cell.today { background: rgba(100,255,218,0.04); }
+    .cal-date { color: var(--slate); font-size: 0.78rem; font-family: monospace; }
+    .cal-cell.today .cal-date { color: var(--teal); font-weight: 700; }
+    .cal-total { color: #ef4444; font-size: 0.8rem; font-family: monospace; font-weight: 600; margin-top: 0.2rem; }
+    .cal-entry { font-size: 0.7rem; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-plus { position: absolute; bottom: 3px; right: 5px; color: var(--card-border); font-size: 0.85rem; }
+    .cal-cell:hover .cal-plus { color: var(--teal); }
+
+    /* MODAL */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+    .overlay.open { display: flex; }
+    .modal { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 420px; position: relative; max-height: 90vh; overflow-y: auto; }
+    .modal-title { color: var(--lightest-slate); font-size: 1.05rem; font-weight: 600; margin-bottom: 1.25rem; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--slate); font-size: 1.3rem; cursor: pointer; }
+    .modal-close:hover { color: var(--lightest-slate); }
+
+    .exp-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--card-border); font-size: 0.86rem; }
+    .exp-item:last-child { border-bottom: none; }
+    .exp-name { color: var(--lightest-slate); }
+    .exp-cat { font-size: 0.74rem; }
+    .exp-amt { color: #ef4444; font-family: monospace; margin-right: 0.5rem; }
+    .exp-del { background: none; border: none; color: var(--slate); cursor: pointer; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.78rem; }
+    .exp-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+    .add-section { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--card-border); }
+    .add-label { color: var(--teal); font-family: monospace; font-size: 0.78rem; margin-bottom: 0.75rem; }
+
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
+      .goals-grid { grid-template-columns: 1fr; }
+      .cal-cell { min-height: 60px; padding: 0.3rem; }
+      .cal-dn { padding: 0.4rem 0; font-size: 0.7rem; }
+      .summary-grid { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">KR</a>
+  <a href="index.html" class="back-link">← Portfolio</a>
+</nav>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('planner',this)">Financial Planner</button>
+    <button class="tab-btn" onclick="switchTab('tracker',this)">Budget Tracker</button>
+  </div>
+
+  <!-- ===== PLANNER TAB ===== -->
+  <div id="tab-planner" class="tab-content active">
+    <div id="wizard" class="wizard">
+      <div class="wizard-header">
+        <h1 class="wizard-title">Build Your Financial Plan</h1>
+        <p class="wizard-sub">Answer 7 questions. Get a personalized 3, 5 &amp; 30-year Canadian roadmap — free.</p>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:14%"></div></div>
+      <div class="progress-label" id="prog-label">Step 1 of 7</div>
+
+      <!-- Step 1 -->
+      <div class="step active" id="step-1">
+        <div class="step-card">
+          <div class="step-num">01 / 07</div>
+          <h2 class="step-heading">About You</h2>
+          <p class="step-desc">Let's start with the basics.</p>
+          <div class="field"><label>First Name</label><input id="f-name" type="text" placeholder="e.g. Alex" /></div>
+          <div class="field-row">
+            <div class="field"><label>Age</label><input id="f-age" type="number" placeholder="e.g. 30" min="18" max="80" /></div>
+            <div class="field"><label>Province</label>
+              <select id="f-prov">
+                <option value="ON">Ontario</option><option value="BC">British Columbia</option>
+                <option value="AB">Alberta</option><option value="QC">Quebec</option>
+                <option value="MB">Manitoba</option><option value="SK">Saskatchewan</option>
+                <option value="NS">Nova Scotia</option><option value="NB">New Brunswick</option>
+                <option value="NL">Newfoundland</option><option value="PE">PEI</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn btn-outline" onclick="next(1)">Next →</button></div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step" id="step-2">
+        <div class="step-card">
+          <div class="step-num">02 / 07</div>
+          <h2 class="step-heading">Your Income</h2>
+          <p class="step-desc">Enter take-home pay after all taxes and deductions.</p>
+          <div class="field"><label>Monthly Take-Home Pay ($CAD)</label><input id="f-income" type="number" placeholder="e.g. 4500" min="0" /></div>
+          <div class="field"><label>Other Monthly Income — optional (side work, rental, etc.)</label><input id="f-extra" type="number" placeholder="e.g. 500" min="0" /></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(2)">← Back</button>
+          <button class="btn btn-outline" onclick="next(2)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" id="step-3">
+        <div class="step-card">
+          <div class="step-num">03 / 07</div>
+          <h2 class="step-heading">Housing &amp; Fixed Bills</h2>
+          <p class="step-desc">Your recurring monthly commitments.</p>
+          <div class="field"><label>Rent or Mortgage (monthly)</label><input id="f-rent" type="number" placeholder="e.g. 1800" min="0" /></div>
+          <div class="field-row">
+            <div class="field"><label>Phone</label><input id="f-phone" type="number" placeholder="e.g. 60" min="0" /></div>
+            <div class="field"><label>Internet</label><input id="f-internet" type="number" placeholder="e.g. 70" min="0" /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Utilities (hydro/gas/water)</label><input id="f-util" type="number" placeholder="e.g. 150" min="0" /></div>
+            <div class="field"><label>Car Payment</label><input id="f-car" type="number" placeholder="e.g. 400 or 0" min="0" /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Car Insurance</label><input id="f-carins" type="number" placeholder="e.g. 200 or 0" min="0" /></div>
+            <div class="field"><label>Subscriptions (Netflix, gym…)</label><input id="f-subs" type="number" placeholder="e.g. 50" min="0" /></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(3)">← Back</button>
+          <button class="btn btn-outline" onclick="next(3)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step" id="step-4">
+        <div class="step-card">
+          <div class="step-num">04 / 07</div>
+          <h2 class="step-heading">Day-to-Day Spending</h2>
+          <p class="step-desc">Think about your typical monthly spending.</p>
+          <div class="field-row">
+            <div class="field"><label>Groceries</label><input id="f-groc" type="number" placeholder="e.g. 400" min="0" /></div>
+            <div class="field"><label>Dining Out / Takeout</label><input id="f-dining" type="number" placeholder="e.g. 200" min="0" /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Entertainment / Hobbies</label><input id="f-ent" type="number" placeholder="e.g. 150" min="0" /></div>
+            <div class="field"><label>Clothing / Personal Care</label><input id="f-cloth" type="number" placeholder="e.g. 100" min="0" /></div>
+          </div>
+          <div class="field"><label>Other Monthly Spending</label><input id="f-other" type="number" placeholder="e.g. 100" min="0" /></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(4)">← Back</button>
+          <button class="btn btn-outline" onclick="next(4)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step" id="step-5">
+        <div class="step-card">
+          <div class="step-num">05 / 07</div>
+          <h2 class="step-heading">Credit Cards &amp; Debt</h2>
+          <p class="step-desc">This is where the biggest financial wins often hide.</p>
+          <div class="cc-block">
+            <div class="cc-label">CREDIT CARD 1</div>
+            <div class="field-row">
+              <div class="field"><label>Balance</label><input id="f-c1b" type="number" placeholder="e.g. 3500" min="0" /></div>
+              <div class="field"><label>Interest Rate (%)</label><input id="f-c1r" type="number" placeholder="e.g. 19.99" min="0" step="0.01" /></div>
+            </div>
+            <div class="field"><label>Minimum Monthly Payment</label><input id="f-c1m" type="number" placeholder="e.g. 75" min="0" /></div>
+          </div>
+          <div class="cc-block">
+            <div class="cc-label">CREDIT CARD 2 — leave blank if none</div>
+            <div class="field-row">
+              <div class="field"><label>Balance</label><input id="f-c2b" type="number" placeholder="e.g. 1200" min="0" /></div>
+              <div class="field"><label>Interest Rate (%)</label><input id="f-c2r" type="number" placeholder="e.g. 19.99" min="0" step="0.01" /></div>
+            </div>
+            <div class="field"><label>Minimum Monthly Payment</label><input id="f-c2m" type="number" placeholder="e.g. 40" min="0" /></div>
+          </div>
+          <div class="field"><label>Other Debt Monthly Payment (student loan, LOC, etc.)</label><input id="f-od" type="number" placeholder="e.g. 200 or 0" min="0" /></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(5)">← Back</button>
+          <button class="btn btn-outline" onclick="next(5)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="step" id="step-6">
+        <div class="step-card">
+          <div class="step-num">06 / 07</div>
+          <h2 class="step-heading">Current Savings</h2>
+          <p class="step-desc">Starting from zero? No problem. Every plan starts somewhere.</p>
+          <div class="field-row">
+            <div class="field"><label>Bank / Emergency Savings</label><input id="f-sav" type="number" placeholder="e.g. 2000" min="0" /></div>
+            <div class="field"><label>TFSA Balance</label><input id="f-tfsa" type="number" placeholder="e.g. 5000 or 0" min="0" /></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>RRSP Balance</label><input id="f-rrsp" type="number" placeholder="e.g. 0" min="0" /></div>
+            <div class="field"><label>FHSA Balance <span style="color:var(--slate);font-size:0.75rem">(First Home)</span></label><input id="f-fhsa" type="number" placeholder="e.g. 0" min="0" /></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(6)">← Back</button>
+          <button class="btn btn-outline" onclick="next(6)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 7 -->
+      <div class="step" id="step-7">
+        <div class="step-card">
+          <div class="step-num">07 / 07</div>
+          <h2 class="step-heading">Your Financial Goals</h2>
+          <p class="step-desc">Select everything that matters. Your plan will be built around these.</p>
+          <div class="goals-grid">
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="home" /><span class="goal-icon">🏠</span><span class="goal-label">Buy a Home</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="retire" /><span class="goal-icon">🌴</span><span class="goal-label">Retire Comfortably</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="debt" /><span class="goal-icon">💳</span><span class="goal-label">Pay Off Debt</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="emergency" /><span class="goal-icon">🛡️</span><span class="goal-label">Emergency Fund</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="travel" /><span class="goal-icon">✈️</span><span class="goal-label">Travel</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="invest" /><span class="goal-icon">📈</span><span class="goal-label">Grow Investments</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="education" /><span class="goal-icon">🎓</span><span class="goal-label">Education / RESP</span></label>
+            <label class="goal-opt" onclick="toggleGoal(this)"><input type="checkbox" value="business" /><span class="goal-icon">🚀</span><span class="goal-label">Start a Business</span></label>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="prev(7)">← Back</button>
+          <button class="btn btn-solid" onclick="generate()">Generate My Plan →</button>
+        </div>
+      </div>
+    </div><!-- /wizard -->
+
+    <!-- RESULTS -->
+    <div id="results" class="results-wrap">
+      <div class="res-header">
+        <p style="color:var(--teal);font-family:monospace;font-size:0.88rem;margin-bottom:0.4rem">Your Personalized Financial Plan</p>
+        <h1 class="res-title">Roadmap for <span class="res-name" id="r-name"></span></h1>
+        <p class="res-sub" id="r-sub"></p>
+      </div>
+
+      <div class="summary-grid" id="r-summary"></div>
+
+      <div class="chart-box">
+        <div class="chart-title">Monthly Expense Breakdown</div>
+        <div class="chart-wrap"><canvas id="expChart"></canvas></div>
+      </div>
+
+      <div class="plan-block">
+        <div class="plan-head"><span class="yr-badge">3-Year Plan</span><span class="plan-title">Milestones by <span id="y3"></span></span></div>
+        <div class="milestones" id="r-3yr"></div>
+      </div>
+
+      <div class="plan-block">
+        <div class="plan-head"><span class="yr-badge">5-Year Plan</span><span class="plan-title">Milestones by <span id="y5"></span></span></div>
+        <div class="milestones" id="r-5yr"></div>
+      </div>
+
+      <div class="plan-block">
+        <div class="plan-head"><span class="yr-badge">30-Year Plan</span><span class="plan-title">Retirement Vision by <span id="y30"></span></span></div>
+        <div class="milestones" id="r-30yr"></div>
+      </div>
+
+      <div class="plan-block">
+        <div class="plan-head"><span class="plan-title">Personalized Tips &amp; Tricks</span></div>
+        <div class="tips" id="r-tips"></div>
+      </div>
+
+      <button class="reset-btn" onclick="reset()">← Start Over / New Plan</button>
+    </div>
+  </div><!-- /tab-planner -->
+
+  <!-- ===== TRACKER TAB ===== -->
+  <div id="tab-tracker" class="tab-content">
+    <div class="tracker-wrap">
+      <div class="tracker-top">
+        <h1 class="tracker-title">Budget Tracker</h1>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)">‹</button>
+          <span class="month-label" id="month-label"></span>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="tracker-stats" id="tracker-stats"></div>
+      <div class="cat-legend" id="cat-legend"></div>
+      <div class="calendar">
+        <div class="cal-header">
+          <div class="cal-dn">SUN</div><div class="cal-dn">MON</div><div class="cal-dn">TUE</div>
+          <div class="cal-dn">WED</div><div class="cal-dn">THU</div><div class="cal-dn">FRI</div><div class="cal-dn">SAT</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- EXPENSE MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-list"></div>
+    <div class="add-section">
+      <div class="add-label">+ ADD EXPENSE</div>
+      <div class="field"><label>Description</label><input id="e-desc" type="text" placeholder="e.g. Coffee, Groceries" /></div>
+      <div class="field-row">
+        <div class="field"><label>Amount ($)</label><input id="e-amt" type="number" placeholder="15.50" min="0" step="0.01" /></div>
+        <div class="field"><label>Category</label>
+          <select id="e-cat">
+            <option value="food">Food &amp; Drink</option>
+            <option value="housing">Housing</option>
+            <option value="transport">Transport</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="health">Health</option>
+            <option value="shopping">Shopping</option>
+            <option value="bills">Bills</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-solid" style="width:100%;margin-top:0.5rem" onclick="addExpense()">Add Expense</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let curStep = 1;
+let activeDay = null;
+let tYear = new Date().getFullYear();
+let tMonth = new Date().getMonth();
+
+const CATS = {
+  food:          { label: 'Food & Drink',  color: '#f59e0b' },
+  housing:       { label: 'Housing',        color: '#3b82f6' },
+  transport:     { label: 'Transport',      color: '#8b5cf6' },
+  entertainment: { label: 'Entertainment',  color: '#ec4899' },
+  health:        { label: 'Health',         color: '#22c55e' },
+  shopping:      { label: 'Shopping',       color: '#f97316' },
+  bills:         { label: 'Bills',          color: '#64ffda' },
+  other:         { label: 'Other',          color: '#94a3b8' },
+};
+
+// ── TABS ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'tracker') renderTracker();
+}
+
+// ── WIZARD HELPERS ──
+function g(id, fallback = 0) {
+  const v = document.getElementById(id)?.value;
+  return v ? parseFloat(v) : fallback;
+}
+function s(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
+function updateProg() {
+  document.getElementById('prog-fill').style.width = (curStep / 7 * 100) + '%';
+  document.getElementById('prog-label').textContent = `Step ${curStep} of 7`;
+}
+
+function next(from) {
+  if (from === 1 && !s('f-name')) { alert('Please enter your name.'); return; }
+  if (from === 2 && !g('f-income')) { alert('Please enter your monthly income.'); return; }
+  document.getElementById('step-' + from).classList.remove('active');
+  document.getElementById('step-' + (from + 1)).classList.add('active');
+  curStep = from + 1;
+  updateProg();
+  window.scrollTo({ top: 80, behavior: 'smooth' });
+}
+
+function prev(from) {
+  document.getElementById('step-' + from).classList.remove('active');
+  document.getElementById('step-' + (from - 1)).classList.add('active');
+  curStep = from - 1;
+  updateProg();
+  window.scrollTo({ top: 80, behavior: 'smooth' });
+}
+
+function toggleGoal(el) {
+  el.classList.toggle('selected');
+  el.querySelector('input').checked = el.classList.contains('selected');
+}
+
+// ── PLAN GENERATION ──
+function generate() {
+  const d = getData();
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  render(d);
+}
+
+function getData() {
+  return {
+    name: s('f-name'), age: g('f-age'), prov: s('f-prov'),
+    income: g('f-income') + g('f-extra'),
+    rent: g('f-rent'), phone: g('f-phone'), internet: g('f-internet'),
+    util: g('f-util'), car: g('f-car'), carins: g('f-carins'), subs: g('f-subs'),
+    groc: g('f-groc'), dining: g('f-dining'), ent: g('f-ent'), cloth: g('f-cloth'), other: g('f-other'),
+    c1b: g('f-c1b'), c1r: g('f-c1r'), c1m: g('f-c1m'),
+    c2b: g('f-c2b'), c2r: g('f-c2r'), c2m: g('f-c2m'),
+    od: g('f-od'),
+    sav: g('f-sav'), tfsa: g('f-tfsa'), rrsp: g('f-rrsp'), fhsa: g('f-fhsa'),
+    goals: [...document.querySelectorAll('.goal-opt.selected input')].map(i => i.value),
+  };
+}
+
+function fmt(n) { return '$' + Math.abs(Math.round(n)).toLocaleString('en-CA'); }
+function fmtK(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
+  return fmt(n);
+}
+function fv(pv, pmt, annualRate, months) {
+  if (annualRate === 0) return pv + pmt * months;
+  const r = annualRate / 12;
+  return pv * Math.pow(1 + r, months) + pmt * (Math.pow(1 + r, months) - 1) / r;
+}
+function ms(icon, title, detail) {
+  return `<div class="ms"><div class="ms-icon">${icon}</div><div><div class="ms-title">${title}</div><div class="ms-detail">${detail}</div></div></div>`;
+}
+
+function render(d) {
+  const yr = new Date().getFullYear();
+  const fixed = d.rent + d.phone + d.internet + d.util + d.car + d.carins + d.subs;
+  const variable = d.groc + d.dining + d.ent + d.cloth + d.other;
+  const debt = d.c1m + d.c2m + d.od;
+  const total = fixed + variable + debt;
+  const surplus = d.income - total;
+  const totalDebt = d.c1b + d.c2b;
+  const totalSaved = d.sav + d.tfsa + d.rrsp + d.fhsa;
+  const efTarget = total * 3;
+  const monthlySave = Math.max(0, surplus * 0.5);
+
+  // Header
+  document.getElementById('r-name').textContent = d.name;
+  document.getElementById('r-sub').textContent = `Age ${d.age} · ${d.prov} · ${new Date().toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}`;
+  document.getElementById('y3').textContent = yr + 3;
+  document.getElementById('y5').textContent = yr + 5;
+  document.getElementById('y30').textContent = yr + 30;
+
+  // Summary
+  const sc = surplus > 0 ? 'pos' : surplus < 0 ? 'neg' : '';
+  const efPct = Math.min(100, Math.round(d.sav / efTarget * 100));
+  document.getElementById('r-summary').innerHTML = [
+    ['Monthly Income', fmt(d.income), ''],
+    ['Monthly Expenses', fmt(total), ''],
+    ['Monthly Surplus', (surplus < 0 ? '-' : '') + fmt(surplus), sc],
+    ['Total Debt', totalDebt > 0 ? fmt(totalDebt) : 'None!', totalDebt > 0 ? 'neg' : 'pos'],
+    ['Total Saved', fmt(totalSaved), 'pos'],
+    ['Emergency Fund', efPct + '%', efPct >= 100 ? 'pos' : efPct >= 50 ? 'warn' : 'neg'],
+  ].map(([l, v, c]) => `<div class="s-card"><div class="s-label">${l}</div><div class="s-value ${c}">${v}</div></div>`).join('');
+
+  // Chart
+  if (window._chart) window._chart.destroy();
+  window._chart = new Chart(document.getElementById('expChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Housing', 'Food', 'Transport', 'Lifestyle', 'Debt', 'Other Bills'],
+      datasets: [{
+        data: [d.rent, d.groc + d.dining, d.car + d.carins, d.ent + d.cloth, debt, d.phone + d.internet + d.util + d.subs + d.other],
+        backgroundColor: ['#3b82f6','#f59e0b','#8b5cf6','#ec4899','#ef4444','#64ffda'],
+        borderColor: '#112240', borderWidth: 3,
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom', labels: { color: '#a8b2d8', font: { size: 11 }, padding: 12 } } }, cutout: '65%' }
+  });
+
+  // 3-Year
+  const save3 = fv(totalSaved, monthlySave, 0.05, 36);
+  const m3 = [];
+  if (totalDebt > 0) {
+    const extra = surplus > 0 ? surplus * 0.4 : 0;
+    const mo = Math.ceil(totalDebt / (debt + extra));
+    if (mo <= 36) m3.push(ms('🎉', `Debt-Free by ${new Date(Date.now() + mo * 30 * 86400000).toLocaleDateString('en-CA', { month: 'short', year: 'numeric' })}`, `Pay off ${fmt(totalDebt)} by directing extra cash to the highest-rate card first (avalanche method)`));
+    else m3.push(ms('💳', `Reduce Debt to ~${fmt(Math.max(0, totalDebt - (debt + extra) * 36))}`, `Stay consistent — every extra dollar toward the highest-rate card saves the most`));
+  }
+  if (d.sav < efTarget) {
+    const mo = surplus > 0 ? Math.ceil((efTarget - d.sav) / (surplus * 0.4)) : 999;
+    m3.push(ms('🛡️', mo <= 36 ? 'Emergency Fund Complete' : 'Build Emergency Fund', `Target: ${fmt(efTarget)} (3 months expenses) — currently ${efPct}% there`));
+  }
+  m3.push(ms('💰', `Net Worth: ~${fmtK(save3 - Math.max(0, totalDebt - debt * 36))}`, 'Based on consistent saving at 5% average annual growth'));
+  m3.push(ms('📊', 'TFSA: Contribute Up to $21,000', 'Max $7,000/year — tax-free growth is your most powerful Canadian advantage'));
+  if (d.goals.includes('home')) m3.push(ms('🏠', 'Open &amp; Max Your FHSA', `$8,000/year, tax-deductible &amp; tax-free on withdrawal — the best account in Canada for first-time buyers`));
+  document.getElementById('r-3yr').innerHTML = m3.join('');
+
+  // 5-Year
+  const save5 = fv(totalSaved, monthlySave * 1.1, 0.06, 60);
+  const m5 = [];
+  m5.push(ms('💎', `Projected Net Worth: ${fmtK(save5)}`, 'Compound growth across TFSA, RRSP, and savings — keep contributions consistent'));
+  if (totalDebt > 0) m5.push(ms('✅', 'Consumer Debt Fully Eliminated', 'With discipline, all credit card debt can be cleared — freeing up hundreds per month'));
+  if (d.goals.includes('home')) {
+    const dp = fv(d.fhsa + d.sav * 0.4, monthlySave * 0.4, 0.05, 60);
+    m5.push(ms('🏠', `Down Payment Target: ${fmtK(dp)}`, 'Combine FHSA + TFSA for maximum tax advantage on your first home purchase'));
+  }
+  if (d.goals.includes('invest')) m5.push(ms('📈', `TFSA Could Reach ${fmtK(fv(d.tfsa, 583, 0.07, 60))}`, 'At 7% avg return with max $7K/year contributions'));
+  m5.push(ms('🎯', 'Aim for 10–20% Income Growth', 'Through a raise, promotion, or side income — the most powerful lever in any financial plan'));
+  document.getElementById('r-5yr').innerHTML = m5.join('');
+
+  // 30-Year
+  const retire = fv(d.tfsa + d.rrsp + d.fhsa, monthlySave * 1.5, 0.07, 360);
+  const retireAge = d.age + 30;
+  const cpp = 8500;
+  const oas = retireAge >= 65 ? 7707 : 0;
+  const withdrawl = Math.round(retire * 0.04);
+  const retireAnnual = withdrawl + cpp + oas;
+  const m30 = [];
+  m30.push(ms('🌴', `Retirement Portfolio: ${fmtK(retire)}`, 'Based on consistent investing at 7% avg return — the Canadian market long-term average'));
+  m30.push(ms('💵', `Estimated Annual Retirement Income: ${fmtK(retireAnnual)}`, `4% withdrawal (${fmtK(withdrawl)}) + CPP (~$${cpp.toLocaleString()})${oas ? ` + OAS (~$${oas.toLocaleString()})` : ''}`));
+  m30.push(ms('🏦', 'RRSP → RRIF Conversion by Age 71', 'Maximize RRSP in your peak earning years; convert to RRIF for tax-efficient retirement income'));
+  m30.push(ms('📋', 'Estate Planning by Year 10', 'Will, Power of Attorney, beneficiary designations, and adequate life/disability insurance — non-negotiable'));
+  if (d.goals.includes('home')) m30.push(ms('🏡', 'Mortgage-Free Home', `A 25-year mortgage taken today is fully paid off by ${yr + 25} — your biggest monthly expense disappears`));
+  document.getElementById('r-30yr').innerHTML = m30.join('');
+
+  // Tips
+  const tips = [];
+  if (totalDebt > 0) {
+    const highCard = d.c1r >= d.c2r ? 'Card 1' : 'Card 2';
+    tips.push(['Avalanche Method — Save the Most Interest', `Pay minimums on both cards, put every extra dollar toward ${highCard} (${Math.max(d.c1r, d.c2r)}% APR). Once cleared, attack the other. This is mathematically optimal.`]);
+  }
+  if (surplus < 0) {
+    tips.push(['You\'re Running a Deficit', `Expenses exceed income by ${fmt(Math.abs(surplus))}/month. Dining ($${d.dining}) and entertainment ($${d.ent}) are the fastest areas to cut without affecting quality of life.`]);
+  } else {
+    tips.push([`You Have ${fmt(surplus)}/Month to Deploy`, `Follow 50/30/20: 50% needs, 30% wants, 20% savings &amp; debt. Right now, prioritize: 1) Emergency fund, 2) Credit card debt, 3) TFSA.`]);
+  }
+  tips.push(['TFSA First — Unless You Earn Over $100K', 'In Canada, max your TFSA ($7,000/year) before RRSP if you\'re under the top bracket. Growth and withdrawals are completely tax-free.']);
+  if (d.goals.includes('home')) tips.push(['The FHSA is Canada\'s Best-Kept Secret', '$8,000/year contribution, tax deduction on the way in, tax-free on the way out. You can hold FHSA + TFSA + RRSP (First Home Buyer\'s Plan) simultaneously for a first home purchase.']);
+  if (d.dining > 250) tips.push([`Dining Out Costs You ${fmt(d.dining * 12)}/Year`, `Cutting dining from $${d.dining} to $${Math.round(d.dining * 0.6)} saves ${fmt(d.dining * 0.4 * 12)}/year — enough to max a TFSA.`]);
+  tips.push(['Automate Everything on Payday', 'Set up automatic transfers the day you get paid: TFSA contribution, emergency fund top-up, extra debt payment. Spend what\'s left — not the other way around.']);
+  tips.push(['The RRSP Refund Loop', 'Contribute to RRSP → get a tax refund → invest the refund in your TFSA. This compound hack can add tens of thousands to your retirement over time.']);
+  if (d.goals.includes('retire')) tips.push(['The Rule of 72', 'Divide 72 by your annual return to find how long money takes to double. At 7%, your investments double every ~10 years. Start early — time is the variable you can\'t buy back.']);
+
+  document.getElementById('r-tips').innerHTML = tips.map(([t, b]) =>
+    `<div class="tip"><div class="tip-title">${t}</div><div class="tip-text">${b}</div></div>`
+  ).join('');
+}
+
+function reset() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('wizard').style.display = 'block';
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-1').classList.add('active');
+  curStep = 1;
+  updateProg();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── TRACKER ──
+function key(y, m) { return `tr_${y}_${m}`; }
+function load() { return JSON.parse(localStorage.getItem(key(tYear, tMonth)) || '{}'); }
+function save(d) { localStorage.setItem(key(tYear, tMonth), JSON.stringify(d)); }
+
+function changeMonth(dir) {
+  tMonth += dir;
+  if (tMonth < 0) { tMonth = 11; tYear--; }
+  if (tMonth > 11) { tMonth = 0; tYear++; }
+  renderTracker();
+}
+
+function renderTracker() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('month-label').textContent = `${MONTHS[tMonth]} ${tYear}`;
+
+  const data = load();
+  const today = new Date();
+  let monthTotal = 0;
+  const catTotals = {};
+
+  Object.values(data).forEach(arr => arr.forEach(e => {
+    monthTotal += e.amount;
+    catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+  }));
+
+  const budget = parseFloat(localStorage.getItem('budget') || 0);
+  const rem = budget > 0 ? budget - monthTotal : null;
+  const topCat = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a])[0];
+
+  document.getElementById('tracker-stats').innerHTML = `
+    <div class="ts"><div class="ts-lbl">Total Spent</div><div class="ts-val bad">$${monthTotal.toFixed(2)}</div></div>
+    ${budget > 0
+      ? `<div class="ts"><div class="ts-lbl">Budget</div><div class="ts-val">$${budget.toFixed(2)}</div></div>
+         <div class="ts"><div class="ts-lbl">Remaining</div><div class="ts-val ${rem >= 0 ? 'good' : 'bad'}">$${Math.abs(rem).toFixed(2)} ${rem < 0 ? 'over' : 'left'}</div></div>`
+      : `<div class="ts" onclick="setBudget()" style="cursor:pointer"><div class="ts-lbl">Monthly Budget</div><div class="ts-val link">Set a budget →</div></div>`
+    }
+    <div class="ts"><div class="ts-lbl">Top Category</div><div class="ts-val" style="font-size:1rem">${topCat ? CATS[topCat].label : '—'}</div></div>
+  `;
+
+  document.getElementById('cat-legend').innerHTML = Object.entries(catTotals)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, t]) => `<div class="cat-badge"><div class="cat-dot" style="background:${CATS[cat].color}"></div><span class="cat-name">${CATS[cat].label}</span><span class="cat-amt">$${t.toFixed(2)}</span></div>`)
+    .join('');
+
+  const firstDay = new Date(tYear, tMonth, 1).getDay();
+  const daysInMonth = new Date(tYear, tMonth + 1, 0).getDate();
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < firstDay; i++) {
+    const c = document.createElement('div');
+    c.className = 'cal-cell empty';
+    grid.appendChild(c);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = today.getFullYear() === tYear && today.getMonth() === tMonth && today.getDate() === d;
+    const dayData = data[d] || [];
+    const dayTotal = dayData.reduce((s, e) => s + e.amount, 0);
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (isToday ? ' today' : '');
+    cell.onclick = () => openModal(d);
+    cell.innerHTML = `
+      <div class="cal-date">${d}</div>
+      ${dayTotal > 0 ? `<div class="cal-total">-$${dayTotal.toFixed(2)}</div>` : ''}
+      ${dayData.slice(0, 2).map(e => `<div class="cal-entry" style="color:${CATS[e.category].color}">${e.desc}</div>`).join('')}
+      ${dayData.length > 2 ? `<div class="cal-entry" style="color:var(--slate)">+${dayData.length - 2} more</div>` : ''}
+      <div class="cal-plus">+</div>
+    `;
+    grid.appendChild(cell);
+  }
+}
+
+function openModal(day) {
+  activeDay = day;
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('modal-title').textContent = `${MONTHS[tMonth]} ${day}, ${tYear}`;
+  renderModalList();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('e-desc').focus(), 100);
+}
+
+function renderModalList() {
+  const data = load();
+  const dayData = data[activeDay] || [];
+  if (!dayData.length) {
+    document.getElementById('modal-list').innerHTML = '<p style="color:var(--slate);font-size:0.83rem;padding:0.25rem 0">No expenses yet.</p>';
+    return;
+  }
+  document.getElementById('modal-list').innerHTML = dayData.map((e, i) => `
+    <div class="exp-item">
+      <div>
+        <div class="exp-name">${e.desc}</div>
+        <div class="exp-cat" style="color:${CATS[e.category].color}">${CATS[e.category].label}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div class="exp-amt">-$${e.amount.toFixed(2)}</div>
+        <button class="exp-del" onclick="delExpense(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('e-desc').value = '';
+  document.getElementById('e-amt').value = '';
+  activeDay = null;
+  renderTracker();
+}
+
+function addExpense() {
+  const desc = document.getElementById('e-desc').value.trim();
+  const amount = parseFloat(document.getElementById('e-amt').value);
+  const category = document.getElementById('e-cat').value;
+  if (!desc || !amount || amount <= 0) { alert('Please enter a description and amount.'); return; }
+  const data = load();
+  if (!data[activeDay]) data[activeDay] = [];
+  data[activeDay].push({ desc, amount, category });
+  save(data);
+  document.getElementById('e-desc').value = '';
+  document.getElementById('e-amt').value = '';
+  renderModalList();
+}
+
+function delExpense(i) {
+  const data = load();
+  data[activeDay].splice(i, 1);
+  save(data);
+  renderModalList();
+}
+
+function setBudget() {
+  const b = prompt('Enter your monthly spending budget ($):');
+  if (b && !isNaN(parseFloat(b))) { localStorage.setItem('budget', parseFloat(b)); renderTracker(); }
+}
+
+document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && activeDay !== null) addExpense(); });
+
+renderTracker();
+</script>
+</body>
+</html>
