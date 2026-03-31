@@ -971,7 +971,7 @@ function downloadPDF() {
   doc.text(`30-YEAR PLAN (by ${yr+30})`, 14, y); y += 6; line(y); y += 5;
   doc.setFontSize(9); doc.setFont(undefined, 'normal');
   const retire30 = fv(d.tfsa+d.rrsp+d.fhsa, Math.max(0,c.surplus*0.5*1.5), 0.07, 360);
-  const m30tips = [`Retirement portfolio: ${fmtK(retire30)}`, `Est. annual income: ${fmtK(Math.round(retire30*0.04+8500+(d.age+30>=65?7707:0))}`, `RRSP converted to RRIF by age 71`, d.goals.includes('home') ? `Mortgage-free by ${yr+25}` : 'Review estate plan & insurance coverage'];
+  const m30tips = [`Retirement portfolio: ${fmtK(retire30)}`, `Est. annual income: ${fmtK(Math.round(retire30*0.04+8500+(d.age+30>=65?7707:0)))}`, `RRSP converted to RRIF by age 71`, d.goals.includes('home') ? `Mortgage-free by ${yr+25}` : 'Review estate plan & insurance coverage'];
   m30tips.forEach(t => { setGray(); doc.text('•', 14, y); setWhite(); doc.text(t, 20, y); y += 6; });
 
   // Footer
